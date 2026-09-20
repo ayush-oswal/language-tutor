@@ -1,0 +1,140 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum CEFRLevel {
+  A1
+  A2
+  B1
+  B2
+  C1
+  C2
+}
+
+enum WordStatus {
+  NEW
+  LEARNING
+  FAMILIAR
+  MASTERED
+}
+
+enum ExerciseType {
+  NEW_WORD_LEARNING
+  MATCHING
+  MULTIPLE_CHOICE
+  TRANSLATION
+  FILL_BLANK
+  STORY
+}
+
+enum ExerciseStatus {
+  NEW
+  IN_PROGRESS
+  COMPLETED
+}
+
+model User {
+  id          String   @id @default(uuid())
+  clerkUserId String   @unique
+  email       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  languages   Language[]
+}
+
+model Language {
+  id           String     @id @default(uuid())
+  userId       String
+  name         String
+  languageCode String
+  currentLevel CEFRLevel
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  words        Word[]
+  exercises    Exercise[]
+
+  @@unique([userId, name, languageCode])
+  @@index([userId])
+  @@index([languageCode])
+}
+
+model Word {
+  id             String   @id @default(cuid())
+  languageId     String
+  word           String
+  normalizedWord String
+  translation    String
+  partOfSpeech   String?
+  metadata       Json?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  language       Language      @relation(fields: [languageId], references: [id], onDelete: Cascade)
+  progress       WordProgress?
+
+  @@unique([languageId, normalizedWord])
+  @@index([languageId])
+}
+
+model WordProgress {
+  id           String     @id @default(cuid())
+  wordId       String     @unique
+  status       WordStatus @default(NEW)
+  mastery      Float      @default(0)
+  timesSeen    Int        @default(0)
+  timesCorrect Int        @default(0)
+  timesWrong   Int        @default(0)
+  lastSeenAt   DateTime?
+  nextReviewAt DateTime?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  word         Word @relation(fields: [wordId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+  @@index([nextReviewAt])
+  @@index([mastery])
+}
+
+model Exercise {
+  id                String         @id @default(cuid())
+  languageId        String
+  type              ExerciseType
+  status            ExerciseStatus @default(NEW)
+  payload           Json
+  answerKey         Json
+  generationContext Json?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  completedAt       DateTime?
+
+  language          Language          @relation(fields: [languageId], references: [id], onDelete: Cascade)
+  attempts          ExerciseAttempt[]
+
+  @@index([languageId, status])
+  @@index([languageId, type])
+  @@index([languageId, createdAt])
+}
+
+model ExerciseAttempt {
+  id              String    @id @default(cuid())
+  exerciseId      String
+  answers         Json
+  score           Int
+  percentage      Float
+  questionResults Json
+  createdAt       DateTime  @default(now())
+  completedAt     DateTime?
+
+  exercise        Exercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+
+  @@index([exerciseId])
+}
