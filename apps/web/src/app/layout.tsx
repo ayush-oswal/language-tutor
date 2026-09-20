@@ -12,7 +12,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body>
-        <ClerkProvider>
+        <ClerkProvider publishableKey={process.env.CLERK_PUBLISHABLE_KEY}>
           <Navbar />
           {children}
         </ClerkProvider>
