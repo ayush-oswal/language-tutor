@@ -13,6 +13,10 @@ export function createApp(): Express {
   app.use(cors());
   app.use(express.json());
 
+  app.get("/ping", (_req, res) => {
+    res.json({ status: "ok" });
+  });
+
   // MCP-facing routes — no Clerk session; languageId (and userId only for
   // listLanguages/createLanguage) is the trust boundary. See mcp.ts. Mounted
   // before the "/api" catch-all below so these requests never hit Clerk auth.
