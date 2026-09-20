@@ -1,4 +1,4 @@
-import { newWordExerciseSubmissionSchema } from "@lt/core";
+import { newWordExerciseSubmissionSchema } from "@lt/core/dist/generation/schemas/newWordExercise.schema.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { mcpApi } from "../apiClient.js";

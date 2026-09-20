@@ -11,9 +11,9 @@
     "db:down": "docker compose down",
     "db:migrate": "npm run migrate -w @lt/db",
     "db:generate": "npm run generate -w @lt/db",
-    "build": "npm run build -w @lt/db && npm run build -w @lt/core && npm run build -w @lt/api && npm run build -w @lt/mcp",
+    "build": "npm run build -w @lt/db && npm run build -w @lt/core && npm run build -w @lt/api && npm run build -w packages/mcp",
     "dev:api": "npm run dev -w @lt/api",
-    "dev:mcp": "npm run dev -w @lt/mcp",
+    "dev:mcp": "npm run dev -w packages/mcp",
     "dev:web": "npm run dev -w apps/web",
     "dev": "concurrently -n api,web -c blue,green \"npm run dev:api\" \"npm run dev:web\""
   },

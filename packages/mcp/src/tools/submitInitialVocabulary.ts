@@ -1,4 +1,4 @@
-import { initialVocabularySubmissionSchema } from "@lt/core";
+import { initialVocabularySubmissionSchema } from "@lt/core/dist/generation/schemas/initialVocabulary.schema.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { mcpApi } from "../apiClient.js";

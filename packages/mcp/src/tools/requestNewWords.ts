@@ -1,4 +1,4 @@
-import { NEW_WORD_LEARNING_DEFAULT_COUNT } from "@lt/core";
+import { NEW_WORD_LEARNING_DEFAULT_COUNT } from "@lt/core/dist/config.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { mcpApi } from "../apiClient.js";

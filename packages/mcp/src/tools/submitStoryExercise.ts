@@ -1,4 +1,4 @@
-import { storyExerciseSubmissionSchema } from "@lt/core";
+import { storyExerciseSubmissionSchema } from "@lt/core/dist/generation/schemas/storyExercise.schema.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { mcpApi } from "../apiClient.js";

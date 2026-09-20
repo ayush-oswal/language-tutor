@@ -1,4 +1,4 @@
-import { revisionExerciseSubmissionSchema } from "@lt/core";
+import { revisionExerciseSubmissionSchema } from "@lt/core/dist/generation/schemas/revisionExercise.schema.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { mcpApi } from "../apiClient.js";

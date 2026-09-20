@@ -1,20 +1,30 @@
 {
-  "name": "@lt/mcp",
+  "name": "language-tutor-mcp",
   "version": "0.1.0",
-  "private": true,
+  "description": "MCP server for Language Tutor MCP — an AI-driven language learning app with spaced-repetition vocabulary drills, stories, and exercises.",
+  "license": "MIT",
   "type": "module",
   "main": "dist/index.js",
+  "bin": {
+    "language-tutor-mcp": "dist/index.js"
+  },
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "dev": "tsx watch --env-file=../../.env src/index.ts",
-    "build": "tsc -b",
-    "start": "node --env-file=../../.env dist/index.js"
+    "typecheck": "tsc -b",
+    "build": "npm run typecheck && node build.mjs",
+    "start": "node dist/index.js",
+    "prepublishOnly": "npm run build"
   },
   "dependencies": {
-    "@lt/core": "*",
     "@modelcontextprotocol/sdk": "^1.30.0",
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@lt/core": "*",
+    "esbuild": "^0.24.2",
     "tsx": "^4.19.2",
     "typescript": "^5.6.3"
   }

@@ -1,4 +1,4 @@
-const API_BASE_URL = process.env.API_BASE_URL ?? "http://localhost:4000";
+const API_BASE_URL = process.env.API_BASE_URL ?? "https://language-tutor-cgwq.onrender.com";
 
 export class RemoteApiError extends Error {
   constructor(
