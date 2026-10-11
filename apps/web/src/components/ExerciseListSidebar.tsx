@@ -27,10 +27,10 @@ const STATUS_LABEL: Record<ExerciseStatus, string> = {
 };
 
 export function ExerciseListSidebar({
-  languageId,
+  sessionId,
   exercises,
 }: {
-  languageId: string;
+  sessionId: string;
   exercises: ExerciseSummary[];
 }) {
   const byType = new Map<ExerciseType, ExerciseSummary[]>();
@@ -85,7 +85,7 @@ export function ExerciseListSidebar({
                 return (
                   <Link
                     key={exercise.id}
-                    href={`/languages/${languageId}/exercises/${exercise.id}`}
+                    href={`/sessions/${sessionId}/exercises/${exercise.id}`}
                     className="sidebar-item"
                   >
                     <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>

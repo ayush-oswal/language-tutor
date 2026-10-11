@@ -13,3 +13,10 @@ export function validateBody(schema: ZodSchema) {
     next();
   };
 }
+
+/** Returns the query value if it's one of the enum's values; anything else (missing, repeated, unknown) is treated as absent. */
+export function queryEnum<T extends Record<string, string>>(value: unknown, enumObject: T): T[keyof T] | undefined {
+  return typeof value === "string" && (Object.values(enumObject) as string[]).includes(value)
+    ? (value as T[keyof T])
+    : undefined;
+}

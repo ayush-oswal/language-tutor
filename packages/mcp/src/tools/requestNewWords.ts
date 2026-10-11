@@ -2,6 +2,7 @@ import { NEW_WORD_LEARNING_DEFAULT_COUNT } from "@lt/core/dist/config.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { mcpApi } from "../apiClient.js";
+import { sessionIdSchema } from "../shared.js";
 import { wrapTool } from "../toolHelpers.js";
 
 export function registerRequestNewWords(server: McpServer): void {
@@ -9,24 +10,32 @@ export function registerRequestNewWords(server: McpServer): void {
     "requestNewWords",
     {
       description:
-        "Start a new-word-learning session. This tool does NOT return words — it returns the context you need " +
-        "(the learner's level and their FULL existing vocabulary, so you never regenerate a word they already " +
-        "know) and expects you to generate the words yourself, then call submitNewWordExercise with the full " +
-        "exercise content.\n\n" +
+        "Start a new-word-learning session. Returns the next words from the curated catalogue that the " +
+        "learner hasn't been introduced to yet, at their current CEFR level — each with its wordId, " +
+        "translation, part of speech, gender (if any), example sentences, and tags. NEVER invent or add " +
+        "words of your own: teach exactly the words returned.\n\n" +
         "IMPORTANT — before calling this tool, ask the user whether they want the new words to focus on a " +
-        "specific topic (e.g. work, restaurants, travel, family, shopping). If they name one, pass it as `topic`. " +
-        "If they decline or don't specify one, call this tool without `topic` and generate general " +
-        "level-appropriate vocabulary instead. Never guess a topic on the user's behalf.\n\n" +
-        "After calling this tool: generate exactly `count` NEW words (none overlapping the returned " +
-        "existingVocabulary — compare by meaning, not just spelling) appropriate for the learner's level and " +
-        "topic, build the 3-stage learning exercise (word+meaning presentations, a matching stage, a " +
-        "recall/multiple-choice stage), and call submitNewWordExercise with it.",
+        "specific topic. The topics available are the `availableTags` from getSession (e.g. family, food, " +
+        "sports). If they pick one, pass it as `tag`. If they decline or don't specify one, call this tool " +
+        "without `tag`. Never guess a topic on the user's behalf.\n\n" +
+        "After calling this tool: build the 3-stage learning exercise for the returned words and call " +
+        "submitNewWordExercise with it, referencing words by wordId:\n" +
+        "- Stage 1 (automatic): the backend shows each word with its meaning and example sentences.\n" +
+        "- Stage 2: a matching stage, one item per word (word -> English translation).\n" +
+        "- Stage 3: one fill-in-the-gap question per word, built from one of that word's example sentences: " +
+        'copy the sentence with the word replaced by "___" (exactly once), include the sentence\'s English ' +
+        "translation, and offer the removed form (inflected as it appeared) plus distractors drawn from the " +
+        "other words in the lesson.\n" +
+        "- Shuffle answer options: in stage 2, list the translations in a random order (not the order of the " +
+        "words); in stage 3, put the correct option at a random position in each question. The answer must " +
+        "never be predictable from its position (e.g. A for the first question, B for the second).\n" +
+        "If no words are returned, follow the returned `instructions`.",
       inputSchema: {
-        languageId: z.string().min(1),
+        sessionId: sessionIdSchema,
         count: z.number().int().min(1).max(30).optional().describe(`Defaults to ${NEW_WORD_LEARNING_DEFAULT_COUNT}.`),
-        topic: z.string().optional().describe("A theme to focus vocabulary on, only if the user specified one."),
+        tag: z.string().optional().describe("A topic tag to focus on (one of getSession's availableTags), only if the user chose one."),
       },
     },
-    (args) => wrapTool(() => mcpApi.requestNewWords(args.languageId, { count: args.count, topic: args.topic })),
+    (args) => wrapTool(() => mcpApi.requestNewWords(args.sessionId, { count: args.count, tag: args.tag })),
   );
 }

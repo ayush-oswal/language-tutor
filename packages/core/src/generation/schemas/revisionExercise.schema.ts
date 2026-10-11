@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { acceptedAnswersSchema, hintSchema, optionSchema, wordIdsSchema } from "./shared.js";
 
-const matchingRevisionSchema = z.object({
+export const matchingRevisionSchema = z.object({
   type: z.literal("MATCHING"),
   payload: z.object({
     items: z
@@ -13,7 +13,7 @@ const matchingRevisionSchema = z.object({
   generationContext: z.unknown().optional(),
 });
 
-const multipleChoiceRevisionSchema = z.object({
+export const multipleChoiceRevisionSchema = z.object({
   type: z.literal("MULTIPLE_CHOICE"),
   payload: z.object({
     questions: z
@@ -32,7 +32,7 @@ const multipleChoiceRevisionSchema = z.object({
   generationContext: z.unknown().optional(),
 });
 
-const translationRevisionSchema = z.object({
+export const translationRevisionSchema = z.object({
   type: z.literal("TRANSLATION"),
   payload: z.object({
     questions: z
@@ -51,7 +51,7 @@ const translationRevisionSchema = z.object({
   generationContext: z.unknown().optional(),
 });
 
-const fillBlankRevisionSchema = z.object({
+export const fillBlankRevisionSchema = z.object({
   type: z.literal("FILL_BLANK"),
   payload: z.object({
     questions: z
@@ -71,11 +71,8 @@ const fillBlankRevisionSchema = z.object({
   generationContext: z.unknown().optional(),
 });
 
-export const revisionExerciseSubmissionSchema = z.discriminatedUnion("type", [
-  matchingRevisionSchema,
-  multipleChoiceRevisionSchema,
-  translationRevisionSchema,
-  fillBlankRevisionSchema,
-]);
-
-export type RevisionExerciseSubmission = z.infer<typeof revisionExerciseSubmissionSchema>;
+export type RevisionExerciseSubmission =
+  | z.infer<typeof matchingRevisionSchema>
+  | z.infer<typeof multipleChoiceRevisionSchema>
+  | z.infer<typeof translationRevisionSchema>
+  | z.infer<typeof fillBlankRevisionSchema>;

@@ -10,12 +10,48 @@ import type { ExerciseComponentProps } from "./types";
 
 type Stage = "present" | "stage2" | "stage3";
 const OPTION_LETTERS = ["A", "B", "C", "D", "E", "F"];
+const BLANK = /_{3,}/;
+
+/** Fisher–Yates; the generator's option order often mirrors the question order, so it is never trusted. */
+function shuffle<T>(items: T[]): T[] {
+  const out = [...items];
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+}
+
+function fillBlank(sentence: string, answer: string): string {
+  return sentence.replace(BLANK, answer);
+}
+
+/** Renders the gap as a blank line, or highlights the answer once it is revealed. */
+function renderSentence(sentence: string, answer: string | null) {
+  const [before, after = ""] = sentence.split(BLANK);
+  return (
+    <>
+      {before}
+      {answer === null ? (
+        <span style={{ display: "inline-block", minWidth: "4ch", borderBottom: "2px solid var(--text-muted)" }}>&nbsp;</span>
+      ) : (
+        <span style={{ color: "#34d399", fontWeight: 800 }}>{answer}</span>
+      )}
+      {after}
+    </>
+  );
+}
 
 export function NewWordLearningExercise({ exercise, onSubmit, languageCode }: ExerciseComponentProps) {
   const payload = exercise.payload as unknown as NewWordLearningPayload;
   const answerKey = exercise.answerKey as unknown as NewWordLearningAnswerKey;
 
   const [stage, setStage] = useState<Stage>("present");
+  // Shuffled once per mount so the order stays put while the learner works through the drill.
+  const [stage2Options] = useState(() => shuffle(payload.stage2.options));
+  const [stage3Options] = useState(
+    () => new Map(payload.stage3.questions.map((q) => [q.id, shuffle(q.options)])),
+  );
   const [submitting, setSubmitting] = useState(false);
 
   const stage2ItemIds = payload.stage2.items.map((i) => i.id);
@@ -64,7 +100,7 @@ export function NewWordLearningExercise({ exercise, onSubmit, languageCode }: Ex
             <span className="pill">Discovery</span>
           </div>
           <span className="muted" style={{ fontSize: "0.85rem" }}>
-            {payload.candidates.length} new words
+            {payload.words.length} new words
           </span>
         </div>
 
@@ -72,24 +108,35 @@ export function NewWordLearningExercise({ exercise, onSubmit, languageCode }: Ex
           Study Your New Words
         </h2>
         <p className="muted" style={{ marginBottom: "1.5rem" }}>
-          Read and familiarize yourself with these target words before starting the interactive verification drill.
+          Read each word, its meaning and how it is used in the example sentences. You&apos;ll match the words, then
+          fill them into these sentences.
         </p>
 
         <div className="flashcard-grid">
-          {payload.candidates.map((c) => (
-            <div key={c.tempId} className="flashcard">
+          {payload.words.map((w) => (
+            <div key={w.wordId} className="flashcard">
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "0.5rem" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
-                  <span className="flashcard-word">{c.word}</span>
-                  <SpeakButton text={c.word} lang={languageCode} size="sm" />
+                  <span className="flashcard-word">{w.word}</span>
+                  <SpeakButton text={w.word} lang={languageCode} size="sm" />
                 </div>
-                {c.partOfSpeech && (
-                  <span className="pill" style={{ fontSize: "0.7rem" }}>
-                    {c.partOfSpeech}
-                  </span>
-                )}
+                <span className="pill" style={{ fontSize: "0.7rem" }}>
+                  {w.partOfSpeech.toLowerCase()}
+                  {w.gender ? ` · ${w.gender}` : ""}
+                </span>
               </div>
-              <p className="flashcard-translation">{c.translation}</p>
+              <p className="flashcard-translation">{w.translation}</p>
+              {w.sentences.slice(0, 2).map((s, i) => (
+                <div key={i} style={{ marginTop: "0.6rem", fontSize: "0.85rem" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "0.35rem", color: "var(--text-main)" }}>
+                    <span>{s.sentence}</span>
+                    <SpeakButton text={s.sentence} lang={languageCode} size="sm" />
+                  </div>
+                  <div className="muted" style={{ fontSize: "0.8rem" }}>
+                    {s.translation}
+                  </div>
+                </div>
+              ))}
             </div>
           ))}
         </div>
@@ -159,7 +206,7 @@ export function NewWordLearningExercise({ exercise, onSubmit, languageCode }: Ex
         )}
 
         <div className="options-grid">
-          {payload.stage2.options.map((option, idx) => {
+          {stage2Options.map((option, idx) => {
             let cls = "option-btn";
             const isThisCorrect = revealed && option.id === correctOptionId;
             const isThisWrong = revealed && option.id === stage2Selected && !isCorrect;
@@ -240,6 +287,7 @@ export function NewWordLearningExercise({ exercise, onSubmit, languageCode }: Ex
   if (!current) return null;
   const revealed = stage3Selected !== null;
   const correctOptionId = answerKey.stage3Answers[current.id];
+  const correctOptionText = current.options.find((o) => o.id === correctOptionId)?.text ?? "";
   const isCorrect = stage3Selected === correctOptionId;
   const currentIndex = stage3QuestionIds.length - stage3Drill.roundItems.length + 1;
   const progressPct = Math.round((currentIndex / stage3QuestionIds.length) * 100);
@@ -260,11 +308,28 @@ export function NewWordLearningExercise({ exercise, onSubmit, languageCode }: Ex
         <div className="progress-bar-fill" style={{ width: `${progressPct}%` }} />
       </div>
 
-      <div style={{ display: "flex", alignItems: "flex-start", gap: "0.5rem", marginBottom: "0.75rem" }}>
-        <h3 className="title" style={{ fontSize: "1.35rem", lineHeight: 1.4, margin: 0 }}>
-          {current.prompt}
-        </h3>
-        <SpeakButton text={current.prompt} lang={languageCode} />
+      <span className="muted" style={{ fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 700 }}>
+        {current.prompt}
+      </span>
+
+      <div
+        style={{
+          background: "linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(168, 85, 247, 0.08) 100%)",
+          border: "1px solid rgba(99, 102, 241, 0.25)",
+          borderRadius: "var(--radius-md)",
+          padding: "1.25rem",
+          margin: "0.4rem 0 1.25rem",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "flex-start", gap: "0.5rem" }}>
+          <h3 className="title" style={{ fontSize: "1.35rem", lineHeight: 1.5, margin: 0 }}>
+            {renderSentence(current.sentence, revealed ? correctOptionText : null)}
+          </h3>
+          {revealed && <SpeakButton text={fillBlank(current.sentence, correctOptionText)} lang={languageCode} />}
+        </div>
+        <p className="muted" style={{ margin: "0.5rem 0 0", fontSize: "0.9rem" }}>
+          {current.sentenceTranslation}
+        </p>
       </div>
 
       {current.hint && (
@@ -274,7 +339,7 @@ export function NewWordLearningExercise({ exercise, onSubmit, languageCode }: Ex
       )}
 
       <div className="options-grid">
-        {current.options.map((option, idx) => {
+        {(stage3Options.get(current.id) ?? current.options).map((option, idx) => {
           let cls = "option-btn";
           const isThisCorrect = revealed && option.id === correctOptionId;
           const isThisWrong = revealed && option.id === stage3Selected && !isCorrect;

@@ -3,17 +3,18 @@
 import Link from "next/link";
 import { use } from "react";
 import { ExerciseListSidebar } from "@/components/ExerciseListSidebar";
+import { LevelSelector } from "@/components/LevelSelector";
 import { ProgressStats } from "@/components/ProgressStats";
-import { IconArrowRight, IconBook, IconSearch, IconSparkles } from "@/components/Icons";
-import { useLanguage } from "@/lib/hooks/useLanguage";
+import { IconArrowRight, IconBook, IconSparkles } from "@/components/Icons";
+import { useSession } from "@/lib/hooks/useSession";
 import { useExercises } from "@/lib/hooks/useExercises";
 
-export default function LanguageDashboardPage({ params }: { params: Promise<{ languageId: string }> }) {
-  const { languageId } = use(params);
-  const { language, isLoading: languageLoading } = useLanguage(languageId);
-  const { exercises } = useExercises(languageId);
+export default function SessionDashboardPage({ params }: { params: Promise<{ sessionId: string }> }) {
+  const { sessionId } = use(params);
+  const { session, isLoading: sessionLoading, mutate } = useSession(sessionId);
+  const { exercises } = useExercises(sessionId);
 
-  if (languageLoading || !language) {
+  if (sessionLoading || !session) {
     return (
       <main className="container">
         <div className="card empty-state">
@@ -31,14 +32,16 @@ export default function LanguageDashboardPage({ params }: { params: Promise<{ la
       <nav className="breadcrumb" aria-label="Breadcrumb">
         <Link href="/">My Languages</Link>
         <span className="breadcrumb-separator">/</span>
-        <span className="breadcrumb-active">{language.name}</span>
+        <span className="breadcrumb-active">{session.language.name}</span>
       </nav>
 
       <div className="layout">
-        <ExerciseListSidebar languageId={languageId} exercises={exercises ?? []} />
+        <ExerciseListSidebar sessionId={sessionId} exercises={exercises ?? []} />
 
         <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
-          <ProgressStats language={language} />
+          <ProgressStats session={session} />
+
+          <LevelSelector session={session} onChanged={() => mutate()} />
 
           {/* Vocabulary Portal Card */}
           <div
@@ -75,12 +78,13 @@ export default function LanguageDashboardPage({ params }: { params: Promise<{ la
                   Vocabulary Bank
                 </h3>
                 <p className="muted" style={{ fontSize: "0.85rem", marginTop: "0.2rem" }}>
-                  Browse, search, and manage all <strong>{language.vocabularyStats.total} words</strong> in your deck.
+                  Browse and search all <strong>{session.vocabularyStats.total} words</strong> up to{" "}
+                  {session.currentLevel}.
                 </p>
               </div>
             </div>
 
-            <Link href={`/languages/${languageId}/vocabulary`}>
+            <Link href={`/sessions/${sessionId}/vocabulary`}>
               <button type="button" className="btn" style={{ padding: "0.6rem 1.15rem" }}>
                 <span>View Full Vocabulary</span>
                 <IconArrowRight className="w-4 h-4" />

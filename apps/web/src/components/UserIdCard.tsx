@@ -33,8 +33,8 @@ export function UserIdCard() {
         <h3 style={{ fontSize: "0.95rem", fontWeight: 700, margin: 0 }}>Your User ID</h3>
       </div>
       <p className="muted" style={{ fontSize: "0.85rem", marginBottom: "0.85rem", maxWidth: "560px" }}>
-        Paste this into your Claude Desktop conversation so the MCP tutor knows who you are — it's needed the
-        first time you create or list your languages.
+        Enroll in a language below, then paste this into your Claude Desktop conversation so the MCP tutor
+        can find your languages and build lessons for you.
       </p>
       <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", flexWrap: "wrap" }}>
         <code

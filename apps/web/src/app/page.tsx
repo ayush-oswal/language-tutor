@@ -1,10 +1,12 @@
 "use client";
 
 import { Show, SignInButton, SignUpButton } from "@clerk/nextjs";
-import { LanguageCard } from "@/components/LanguageCard";
+import { EnrollCard } from "@/components/EnrollCard";
+import { SessionCard } from "@/components/SessionCard";
 import { UserIdCard } from "@/components/UserIdCard";
-import { IconBook, IconBrain, IconFire, IconSparkles } from "@/components/Icons";
+import { IconBook, IconBrain, IconFire, IconLanguage, IconSparkles } from "@/components/Icons";
 import { useLanguages } from "@/lib/hooks/useLanguages";
+import { useSessions } from "@/lib/hooks/useSession";
 
 export default function HomePage() {
   return (
@@ -51,10 +53,13 @@ function SignedOutHero() {
 }
 
 function Dashboard() {
-  const { languages, isLoading } = useLanguages();
+  const { sessions, isLoading: sessionsLoading, mutate: mutateSessions } = useSessions();
+  const { languages, isLoading: languagesLoading } = useLanguages();
 
-  const totalWords = languages?.reduce((sum, l) => sum + (l.wordCount ?? 0), 0) ?? 0;
-  const activeCount = languages?.length ?? 0;
+  const enrolledLanguageIds = new Set(sessions?.map((s) => s.language.id) ?? []);
+  const availableLanguages = languages?.filter((l) => !enrolledLanguageIds.has(l.id)) ?? [];
+  const knownWords =
+    sessions?.reduce((sum, s) => sum + s.vocabularyStats.familiar + s.vocabularyStats.mastered, 0) ?? 0;
 
   return (
     <main className="container">
@@ -76,8 +81,8 @@ function Dashboard() {
 
       <UserIdCard />
 
-      {/* Quick Stats Banner if languages exist */}
-      {!isLoading && languages && languages.length > 0 && (
+      {/* Quick Stats Banner if enrolled anywhere */}
+      {sessions && sessions.length > 0 && (
         <div
           className="card"
           style={{
@@ -90,17 +95,17 @@ function Dashboard() {
             <div className="stat-box" style={{ background: "rgba(10, 14, 23, 0.6)" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", color: "var(--primary-light)", marginBottom: "0.25rem" }}>
                 <IconBrain className="w-4 h-4" />
-                <span className="stat-box-label" style={{ margin: 0 }}>Active Languages</span>
+                <span className="stat-box-label" style={{ margin: 0 }}>Enrolled Languages</span>
               </div>
-              <span className="stat-box-value">{activeCount}</span>
+              <span className="stat-box-value">{sessions.length}</span>
             </div>
 
             <div className="stat-box" style={{ background: "rgba(10, 14, 23, 0.6)" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", color: "var(--info)", marginBottom: "0.25rem" }}>
                 <IconBook className="w-4 h-4" />
-                <span className="stat-box-label" style={{ margin: 0 }}>Total Vocabulary</span>
+                <span className="stat-box-label" style={{ margin: 0 }}>Words Known</span>
               </div>
-              <span className="stat-box-value">{totalWords}</span>
+              <span className="stat-box-value">{knownWords}</span>
             </div>
 
             <div className="stat-box" style={{ background: "rgba(10, 14, 23, 0.6)" }}>
@@ -114,69 +119,78 @@ function Dashboard() {
         </div>
       )}
 
-      {/* Main Content Area */}
-      <div>
+      {/* Enrolled languages */}
+      <section style={{ marginBottom: "2.5rem" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1.25rem" }}>
-          <h2 className="subtitle" style={{ margin: 0 }}>Current Courses</h2>
+          <h2 className="subtitle" style={{ margin: 0 }}>Your Languages</h2>
           <span className="muted" style={{ fontSize: "0.85rem" }}>
-            {languages?.length ?? 0} {languages?.length === 1 ? "language" : "languages"} enrolled
+            {sessions?.length ?? 0} {sessions?.length === 1 ? "language" : "languages"} enrolled
           </span>
         </div>
 
-        {isLoading && (
+        {sessionsLoading && (
           <div className="card empty-state">
             <div className="empty-state-icon">
               <IconSparkles className="w-6 h-6" />
             </div>
             <p style={{ fontWeight: 600, color: "var(--text-main)" }}>Loading your courses...</p>
-            <p className="muted" style={{ fontSize: "0.85rem", marginTop: "0.25rem" }}>Connecting to local tutor state</p>
           </div>
         )}
 
-        {!isLoading && languages && languages.length === 0 && (
-          <div className="card empty-state" style={{ padding: "3.5rem 2rem", textAlign: "center" }}>
-            <div className="empty-state-icon" style={{ width: "64px", height: "64px", margin: "0 auto 1.25rem" }}>
-              <IconBrain className="w-8 h-8" />
+        {!sessionsLoading && sessions && sessions.length === 0 && (
+          <div className="card empty-state" style={{ padding: "2.5rem 2rem", textAlign: "center" }}>
+            <div className="empty-state-icon" style={{ width: "56px", height: "56px", margin: "0 auto 1rem" }}>
+              <IconBrain className="w-7 h-7" />
             </div>
-            <h3 style={{ fontSize: "1.3rem", fontWeight: 700, marginBottom: "0.5rem" }}>
-              No languages created yet
-            </h3>
-            <p className="muted" style={{ maxWidth: "480px", margin: "0 auto 1.5rem" }}>
-              Start your journey right now! Tell your MCP assistant which language you would like to master.
+            <h3 style={{ fontSize: "1.2rem", fontWeight: 700, marginBottom: "0.4rem" }}>Not enrolled in any language yet</h3>
+            <p className="muted" style={{ maxWidth: "480px", margin: "0 auto" }}>
+              Pick a language and a starting level below. Then ask your MCP assistant to teach you new words.
             </p>
-            <div
-              style={{
-                display: "inline-flex",
-                flexDirection: "column",
-                gap: "0.5rem",
-                textAlign: "left",
-                background: "rgba(0,0,0,0.3)",
-                padding: "1rem 1.25rem",
-                borderRadius: "var(--radius-md)",
-                border: "1px solid var(--border-subtle)",
-              }}
-            >
-              <span style={{ fontSize: "0.75rem", color: "var(--text-dim)", textTransform: "uppercase", fontWeight: 700 }}>
-                Try asking your assistant:
-              </span>
-              <code className="mono" style={{ color: "var(--primary-light)", fontSize: "0.85rem" }}>
-                &ldquo;I want to learn Spanish at A1&rdquo;
-              </code>
-              <code className="mono" style={{ color: "var(--info)", fontSize: "0.85rem" }}>
-                &ldquo;Teach me German beginner vocabulary&rdquo;
-              </code>
-            </div>
           </div>
         )}
 
-        {languages && languages.length > 0 && (
+        {sessions && sessions.length > 0 && (
           <div className="grid-cards">
-            {languages.map((language) => (
-              <LanguageCard key={language.id} language={language} />
+            {sessions.map((session) => (
+              <SessionCard key={session.id} session={session} />
             ))}
           </div>
         )}
-      </div>
+      </section>
+
+      {/* Catalogue */}
+      <section>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1.25rem" }}>
+          <h2 className="subtitle" style={{ margin: 0 }}>Available Languages</h2>
+        </div>
+
+        {languagesLoading && (
+          <div className="card empty-state">
+            <p style={{ fontWeight: 600, color: "var(--text-main)" }}>Loading languages...</p>
+          </div>
+        )}
+
+        {!languagesLoading && languages && availableLanguages.length === 0 && (
+          <div className="card empty-state" style={{ padding: "2rem", textAlign: "center" }}>
+            <div className="empty-state-icon" style={{ margin: "0 auto 0.75rem" }}>
+              <IconLanguage className="w-6 h-6" />
+            </div>
+            <p className="muted">
+              {languages.length === 0
+                ? "No languages are available yet."
+                : "You're enrolled in every available language."}
+            </p>
+          </div>
+        )}
+
+        {availableLanguages.length > 0 && (
+          <div className="grid-cards">
+            {availableLanguages.map((language) => (
+              <EnrollCard key={language.id} language={language} onEnrolled={() => mutateSessions()} />
+            ))}
+          </div>
+        )}
+      </section>
     </main>
   );
 }

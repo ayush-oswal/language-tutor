@@ -6,11 +6,6 @@ export interface NewWordLearningAnswers {
   stage3: { answers: Record<string, string> }; // questionId -> optionId
 }
 
-/**
- * Scores both stages keyed by tempId (the candidates don't exist as real
- * Word rows yet). exerciseService remaps tempId -> real wordId onto these
- * results immediately after inserting the words.
- */
 export function scoreNewWordLearning(
   payload: NewWordLearningPayload,
   answerKey: NewWordLearningAnswerKey,
@@ -21,7 +16,7 @@ export function scoreNewWordLearning(
     const expected = answerKey.stage2CorrectPairs[item.id];
     return {
       questionId: item.id,
-      wordIds: [item.tempId],
+      wordIds: [item.wordId],
       correct: submitted === expected,
       submitted,
       expected,
@@ -33,7 +28,7 @@ export function scoreNewWordLearning(
     const expected = answerKey.stage3Answers[q.id];
     return {
       questionId: q.id,
-      wordIds: [q.tempId],
+      wordIds: [q.wordId],
       correct: submitted === expected,
       submitted,
       expected,

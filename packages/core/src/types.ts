@@ -4,6 +4,8 @@ import type {
   ExerciseAttempt,
   ExerciseStatus,
   ExerciseType,
+  PartOfSpeech,
+  Tag,
   User,
   Word,
   WordProgress,
@@ -16,6 +18,8 @@ export type {
   ExerciseAttempt,
   ExerciseStatus,
   ExerciseType,
+  PartOfSpeech,
+  Tag,
   User,
   Word,
   WordProgress,
@@ -26,32 +30,47 @@ export interface ExerciseWithAttempts extends Exercise {
   attempts: ExerciseAttempt[]; // ordered createdAt desc — attempts[0] is the most recent
 }
 
-// ---------- Language ----------
+// ---------- Language catalogue ----------
 
 export interface LanguageSummary {
   id: string;
   name: string;
-  languageCode: string;
-  currentLevel: CEFRLevel;
-  wordCount: number;
-  createdAt: Date;
+  code: string;
+  wordCountByLevel: Record<CEFRLevel, number>;
+  totalWords: number;
 }
 
-export interface LanguageDetail extends LanguageSummary {
+// ---------- Language sessions (enrollments) ----------
+
+export interface LevelProgress {
+  level: CEFRLevel;
+  total: number;
+  new: number;
+  learning: number;
+  familiar: number;
+  mastered: number;
+}
+
+export interface SessionOverview {
+  id: string;
+  language: { id: string; name: string; code: string };
+  currentLevel: CEFRLevel;
+  createdAt: Date;
   updatedAt: Date;
+  /** Words at or below currentLevel. */
   vocabularyStats: VocabularyStats;
+  /** One entry per CEFR level, A1 → C2. */
+  levelProgress: LevelProgress[];
 }
 
 // ---------- Vocabulary ----------
 
-export interface NewWordInput {
-  word: string;
+export interface WordSentence {
+  sentence: string;
   translation: string;
-  partOfSpeech?: string;
-  metadata?: Record<string, unknown>;
 }
 
-export type WordWithProgress = Word & { progress: WordProgress | null };
+export type WordWithProgress = Word & { tags: Tag[]; progress: WordProgress };
 
 export interface PaginatedWords {
   words: WordWithProgress[];
@@ -68,10 +87,14 @@ export interface VocabularyStats {
   mastered: number;
 }
 
-export interface DedupWord {
+export interface NewWordForLearning {
+  wordId: string;
   word: string;
-  normalizedWord: string;
   translation: string;
+  partOfSpeech: PartOfSpeech;
+  gender: string | null;
+  sentences: WordSentence[];
+  tags: string[];
 }
 
 // ---------- Revision / Learner Context ----------
@@ -80,6 +103,8 @@ export interface RevisionCandidate {
   wordId: string;
   word: string;
   translation: string;
+  partOfSpeech: PartOfSpeech;
+  level: CEFRLevel;
   mastery: number;
   status: WordStatus;
   timesSeen: number;
@@ -90,9 +115,9 @@ export interface RevisionCandidate {
 }
 
 export interface LearnerContext {
-  language: {
+  session: {
     id: string;
-    name: string;
+    languageName: string;
     languageCode: string;
     level: CEFRLevel;
   };
@@ -237,22 +262,23 @@ export interface StoryAnswerKey {
   answers: Record<string, StoryAnswerKeyEntry>; // question node id -> type-specific answer key entry
 }
 
-export interface NewWordCandidate {
-  tempId: string;
-  word: string;
-  normalizedWord: string;
-  translation: string;
-  partOfSpeech?: string;
-  metadata?: Record<string, unknown>;
-}
-
+/** `words` is a server-side snapshot of the catalogue words being taught, so the exercise renders without extra lookups. */
 export interface NewWordLearningPayload {
   schemaVersion: 1;
-  candidates: NewWordCandidate[];
-  stage1: { presentations: { tempId: string }[] };
-  stage2: { items: { id: string; tempId: string; text: string; hint: string }[]; options: McOption[] };
+  words: NewWordForLearning[];
+  stage1: { presentations: { wordId: string }[] };
+  stage2: { items: { id: string; wordId: string; text: string; hint: string }[]; options: McOption[] };
   stage3: {
-    questions: { id: string; tempId: string; prompt: string; options: McOption[]; hint: string }[];
+    questions: {
+      id: string;
+      wordId: string;
+      prompt: string;
+      /** Example sentence with the word replaced by "___". */
+      sentence: string;
+      sentenceTranslation: string;
+      options: McOption[];
+      hint: string;
+    }[];
   };
 }
 
@@ -286,7 +312,7 @@ export interface ScoreResult {
 
 export interface ExerciseSummary {
   id: string;
-  languageId: string;
+  languageSessionId: string;
   type: ExerciseType;
   status: ExerciseStatus;
   createdAt: Date;

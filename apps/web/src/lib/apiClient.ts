@@ -5,12 +5,10 @@ import type {
   ExerciseSummary,
   ExerciseType,
   ExerciseWithAttempts,
-  LanguageDetail,
   LanguageSummary,
-  LearnerContext,
   PaginatedWords,
+  SessionOverview,
   WordStatus,
-  WordWithProgress,
 } from "@lt/core";
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
@@ -51,38 +49,39 @@ export function createApiClient(getToken: () => Promise<string | null>) {
 
     getLanguages: (): Promise<LanguageSummary[]> => call("/api/languages"),
 
-    getLanguage: (languageId: string): Promise<LanguageDetail> => call(`/api/languages/${languageId}`),
+    getSessions: (): Promise<SessionOverview[]> => call("/api/sessions"),
 
-    getProgress: (languageId: string): Promise<LearnerContext> => call(`/api/languages/${languageId}/progress`),
+    enroll: (languageId: string, level: CEFRLevel): Promise<SessionOverview> =>
+      call("/api/sessions", { method: "POST", body: JSON.stringify({ languageId, level }) }),
+
+    getSession: (sessionId: string): Promise<SessionOverview> => call(`/api/sessions/${sessionId}`),
+
+    changeLevel: (sessionId: string, level: CEFRLevel): Promise<SessionOverview> =>
+      call(`/api/sessions/${sessionId}`, { method: "PATCH", body: JSON.stringify({ level }) }),
 
     getVocabulary: (
-      languageId: string,
-      opts?: { search?: string; status?: WordStatus; page?: number; pageSize?: number },
+      sessionId: string,
+      opts?: { search?: string; status?: WordStatus; level?: CEFRLevel; page?: number; pageSize?: number },
     ): Promise<PaginatedWords> => {
       const params = new URLSearchParams();
       if (opts?.search) params.set("search", opts.search);
       if (opts?.status) params.set("status", opts.status);
+      if (opts?.level) params.set("level", opts.level);
       if (opts?.page) params.set("page", String(opts.page));
       if (opts?.pageSize) params.set("pageSize", String(opts.pageSize));
       const qs = params.toString();
-      return call(`/api/languages/${languageId}/vocabulary${qs ? `?${qs}` : ""}`);
+      return call(`/api/sessions/${sessionId}/vocabulary${qs ? `?${qs}` : ""}`);
     },
 
-    addWord: (
-      languageId: string,
-      input: { word: string; translation: string; partOfSpeech?: string },
-    ): Promise<WordWithProgress> =>
-      call(`/api/languages/${languageId}/vocabulary`, { method: "POST", body: JSON.stringify(input) }),
-
     getExercises: (
-      languageId: string,
+      sessionId: string,
       opts?: { type?: ExerciseType; status?: ExerciseStatus },
     ): Promise<ExerciseSummary[]> => {
       const params = new URLSearchParams();
       if (opts?.type) params.set("type", opts.type);
       if (opts?.status) params.set("status", opts.status);
       const qs = params.toString();
-      return call(`/api/languages/${languageId}/exercises${qs ? `?${qs}` : ""}`);
+      return call(`/api/sessions/${sessionId}/exercises${qs ? `?${qs}` : ""}`);
     },
 
     getExercise: (exerciseId: string): Promise<ExerciseWithAttempts> => call(`/api/exercises/${exerciseId}`),

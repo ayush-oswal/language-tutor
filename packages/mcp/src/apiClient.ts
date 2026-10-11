@@ -35,42 +35,27 @@ function post<T>(path: string, body: unknown): Promise<T> {
   return request<T>(path, { method: "POST", body: JSON.stringify(body) });
 }
 
+const session = (sessionId: string) => `/api/mcp/sessions/${encodeURIComponent(sessionId)}`;
+
 export const mcpApi = {
-  createLanguage: (userId: string, input: { name: string; languageCode: string; currentLevel: string }) =>
-    post<unknown>("/api/mcp/languages", { userId, ...input }),
+  listSessions: (userId: string) => get<unknown>("/api/mcp/sessions", { userId }),
 
-  listLanguages: (userId: string) => get<unknown>("/api/mcp/languages", { userId }),
+  getSession: (sessionId: string) => get<unknown>(session(sessionId)),
 
-  getLanguage: (languageId: string) => get<unknown>(`/api/mcp/languages/${languageId}`),
+  getVocabulary: (sessionId: string, opts?: { search?: string; status?: string }) =>
+    get<unknown>(`${session(sessionId)}/vocabulary`, opts),
 
-  submitInitialVocabulary: (languageId: string, submission: unknown) =>
-    post<unknown>(`/api/mcp/languages/${languageId}/initial-vocabulary`, { submission }),
+  getLearningProgress: (sessionId: string) => get<unknown>(`${session(sessionId)}/progress`),
 
-  getVocabulary: (languageId: string, opts?: { search?: string; status?: string }) =>
-    get<unknown>(`/api/mcp/languages/${languageId}/vocabulary`, opts),
+  requestNewWords: (sessionId: string, opts?: { count?: number; tag?: string }) =>
+    get<unknown>(`${session(sessionId)}/new-words`, opts),
 
-  addWord: (
-    languageId: string,
-    input: { word: string; translation: string; partOfSpeech?: string; metadata?: Record<string, unknown> },
-  ) => post<unknown>(`/api/mcp/languages/${languageId}/words`, input),
+  submitNewWordExercise: (sessionId: string, submission: unknown) =>
+    post<unknown>(`${session(sessionId)}/new-word-exercises`, { submission }),
 
-  getLearningProgress: (languageId: string) => get<unknown>(`/api/mcp/languages/${languageId}/progress`),
+  generateExercise: (sessionId: string, type: string, topic?: string) =>
+    get<unknown>(`${session(sessionId)}/exercise-words`, { type, topic }),
 
-  requestNewWords: (languageId: string, opts?: { count?: number; topic?: string }) =>
-    get<unknown>(`/api/mcp/languages/${languageId}/new-words`, opts),
-
-  submitNewWordExercise: (languageId: string, submission: unknown) =>
-    post<unknown>(`/api/mcp/languages/${languageId}/new-word-exercises`, { submission }),
-
-  generateRevision: (languageId: string, preferredType: string) =>
-    get<unknown>(`/api/mcp/languages/${languageId}/revision`, { preferredType }),
-
-  submitRevisionExercise: (languageId: string, submission: unknown) =>
-    post<unknown>(`/api/mcp/languages/${languageId}/revision-exercises`, { submission }),
-
-  generateStory: (languageId: string, topic?: string) =>
-    get<unknown>(`/api/mcp/languages/${languageId}/story`, { topic }),
-
-  submitStoryExercise: (languageId: string, submission: unknown) =>
-    post<unknown>(`/api/mcp/languages/${languageId}/story-exercises`, { submission }),
+  submitExercise: (sessionId: string, submission: unknown) =>
+    post<unknown>(`${session(sessionId)}/exercises`, { submission }),
 };

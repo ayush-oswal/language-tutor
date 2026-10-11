@@ -2,7 +2,7 @@
 
 MCP server for [Language Tutor MCP](https://github.com/ayush-oswal/language-tutor) — an AI-driven language learning app with spaced-repetition vocabulary drills, stories, and exercises.
 
-It talks to a hosted Language Tutor backend over HTTP; the LLM only generates content (vocabulary, exercises, stories) and calls these tools to persist/fetch it.
+It talks to a hosted Language Tutor backend over HTTP. Vocabulary comes from a curated catalogue on the backend; the LLM only builds exercises and stories around the words the tools hand it.
 
 ## Setup
 

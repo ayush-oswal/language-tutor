@@ -1,8 +1,8 @@
-import type { LanguageDetail } from "@lt/core";
+import type { SessionOverview } from "@lt/core";
 import { IconBook, IconBrain, IconTrophy } from "./Icons";
 
-export function ProgressStats({ language }: { language: LanguageDetail }) {
-  const stats = language.vocabularyStats;
+export function ProgressStats({ session }: { session: SessionOverview }) {
+  const stats = session.vocabularyStats;
   const total = stats.total;
   const masteredPct = total === 0 ? 0 : Math.round((stats.mastered / total) * 100);
   const familiarPct = total === 0 ? 0 : Math.round((stats.familiar / total) * 100);
@@ -15,12 +15,12 @@ export function ProgressStats({ language }: { language: LanguageDetail }) {
         <div>
           <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
             <h2 className="title" style={{ fontSize: "1.4rem", margin: 0 }}>
-              {language.name}
+              {session.language.name}
             </h2>
-            <span className="pill pill-level">{language.currentLevel}</span>
+            <span className="pill pill-level">{session.currentLevel}</span>
           </div>
           <p className="muted" style={{ marginTop: "0.2rem" }}>
-            Vocabulary Mastery & Progress Overview
+            Vocabulary mastery for words up to {session.currentLevel}
           </p>
         </div>
 

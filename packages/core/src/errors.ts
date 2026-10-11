@@ -14,15 +14,9 @@ export class NotFoundError extends DomainError {
   }
 }
 
-export class DuplicateWordError extends DomainError {
-  constructor(word: string) {
-    super(`Word already exists in this language's vocabulary: ${word}`, "DUPLICATE_WORD");
-  }
-}
-
-export class DuplicateLanguageError extends DomainError {
-  constructor(name: string, languageCode: string) {
-    super(`Language already exists: ${name} (${languageCode})`, "DUPLICATE_LANGUAGE");
+export class AlreadyEnrolledError extends DomainError {
+  constructor(languageName: string) {
+    super(`Already enrolled in ${languageName}`, "ALREADY_ENROLLED");
   }
 }
 

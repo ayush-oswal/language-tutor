@@ -2,67 +2,44 @@
 
 import Link from "next/link";
 import { use, useEffect, useState } from "react";
+import type { CEFRLevel } from "@lt/core";
 import { VocabularyTable } from "@/components/VocabularyTable";
-import { IconArrowLeft, IconArrowRight, IconBook, IconPlus, IconSearch, IconSparkles } from "@/components/Icons";
-import { useLanguage } from "@/lib/hooks/useLanguage";
+import { IconArrowLeft, IconArrowRight, IconSearch } from "@/components/Icons";
+import { useSession } from "@/lib/hooks/useSession";
 import { useVocabulary } from "@/lib/hooks/useVocabulary";
-import { useApiClient } from "@/lib/hooks/useApiClient";
+import { CEFR_LEVELS } from "@/lib/levels";
 
 const PAGE_SIZE_OPTIONS = [50, 100] as const;
 
-export default function VocabularyPage({ params }: { params: Promise<{ languageId: string }> }) {
-  const { languageId } = use(params);
-  const { language } = useLanguage(languageId);
-  const client = useApiClient();
+export default function VocabularyPage({ params }: { params: Promise<{ sessionId: string }> }) {
+  const { sessionId } = use(params);
+  const { session } = useSession(sessionId);
   const [search, setSearch] = useState("");
+  const [level, setLevel] = useState<CEFRLevel | "">("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState<number>(PAGE_SIZE_OPTIONS[0]);
-  const { words, total, mutate } = useVocabulary(languageId, { search: search || undefined, page, pageSize });
+  const { words, total } = useVocabulary(sessionId, {
+    search: search || undefined,
+    level: level || undefined,
+    page,
+    pageSize,
+  });
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const selectableLevels = session
+    ? CEFR_LEVELS.slice(0, CEFR_LEVELS.indexOf(session.currentLevel) + 1)
+    : [];
 
-  // Reset to page 1 whenever the search term or page size changes.
+  // Reset to page 1 whenever the filters or page size change.
   useEffect(() => {
     setPage(1);
-  }, [search, pageSize]);
-
-  const [word, setWord] = useState("");
-  const [translation, setTranslation] = useState("");
-  const [partOfSpeech, setPartOfSpeech] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-  const [formError, setFormError] = useState<string | null>(null);
-  const [formSuccess, setFormSuccess] = useState(false);
-
-  async function handleAddWord(e: React.FormEvent) {
-    e.preventDefault();
-    if (!word.trim() || !translation.trim()) return;
-    setSubmitting(true);
-    setFormError(null);
-    setFormSuccess(false);
-    try {
-      await client.addWord(languageId, {
-        word: word.trim(),
-        translation: translation.trim(),
-        partOfSpeech: partOfSpeech.trim() || undefined,
-      });
-      setWord("");
-      setTranslation("");
-      setPartOfSpeech("");
-      setFormSuccess(true);
-      setTimeout(() => setFormSuccess(false), 3000);
-      mutate();
-    } catch (err) {
-      setFormError(err instanceof Error ? err.message : "Failed to add word");
-    } finally {
-      setSubmitting(false);
-    }
-  }
+  }, [search, level, pageSize]);
 
   return (
     <main className="container">
       <nav className="breadcrumb" aria-label="Breadcrumb">
         <Link href="/">My Languages</Link>
         <span className="breadcrumb-separator">/</span>
-        <Link href={`/languages/${languageId}`}>{language?.name ?? "…"}</Link>
+        <Link href={`/sessions/${sessionId}`}>{session?.language.name ?? "…"}</Link>
         <span className="breadcrumb-separator">/</span>
         <span className="breadcrumb-active">Vocabulary</span>
       </nav>
@@ -72,75 +49,24 @@ export default function VocabularyPage({ params }: { params: Promise<{ languageI
         <div>
           <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
             <h1 className="title" style={{ margin: 0 }}>
-              {language?.name ?? "Language"} Vocabulary
+              {session?.language.name ?? "Language"} Vocabulary
             </h1>
             <span className="pill pill-primary">
               {total} {total === 1 ? "word" : "words"}
             </span>
           </div>
           <p className="muted" style={{ marginTop: "0.25rem" }}>
-            Search words, inspect spaced repetition mastery, or manually append new vocabulary items.
+            Every word up to your current level{session ? ` (${session.currentLevel})` : ""}, with your spaced
+            repetition progress.
           </p>
         </div>
 
-        <Link href={`/languages/${languageId}`}>
+        <Link href={`/sessions/${sessionId}`}>
           <button type="button" className="btn btn-secondary" style={{ padding: "0.5rem 1rem" }}>
             <IconArrowLeft size={16} />
             <span>Dashboard</span>
           </button>
         </Link>
-      </div>
-
-      {/* Add Word Card */}
-      <div className="card" style={{ marginBottom: "1.5rem" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "1rem" }}>
-          <IconPlus size={18} />
-          <h3 style={{ fontSize: "1rem", fontWeight: 700, margin: 0 }}>
-            Add New Word to Bank
-          </h3>
-        </div>
-
-        <form onSubmit={handleAddWord} style={{ display: "flex", flexWrap: "wrap", gap: "0.75rem", alignItems: "stretch" }}>
-          <input
-            placeholder="Word (e.g. la manzana)"
-            value={word}
-            onChange={(e) => setWord(e.target.value)}
-            style={{ flex: "1 1 200px", minWidth: 0 }}
-            required
-          />
-          <input
-            placeholder="Translation (e.g. the apple)"
-            value={translation}
-            onChange={(e) => setTranslation(e.target.value)}
-            style={{ flex: "1 1 200px", minWidth: 0 }}
-            required
-          />
-          <input
-            placeholder="Part of speech (noun, verb...)"
-            value={partOfSpeech}
-            onChange={(e) => setPartOfSpeech(e.target.value)}
-            style={{ flex: "1 1 160px", minWidth: 0 }}
-          />
-          <button
-            type="submit"
-            disabled={submitting || !word.trim() || !translation.trim()}
-            style={{ flex: "0 0 auto", whiteSpace: "nowrap" }}
-          >
-            {submitting ? "Adding..." : "Add Word"}
-          </button>
-        </form>
-
-        {formSuccess && (
-          <div className="alert alert-success" style={{ marginTop: "0.75rem" }}>
-            <span>Word added successfully to vocabulary bank!</span>
-          </div>
-        )}
-
-        {formError && (
-          <div className="alert alert-danger" style={{ marginTop: "0.75rem" }}>
-            <span>{formError}</span>
-          </div>
-        )}
       </div>
 
       {/* Vocabulary Explorer Card */}
@@ -169,6 +95,15 @@ export default function VocabularyPage({ params }: { params: Promise<{ languageI
             />
           </div>
 
+          <select value={level} onChange={(e) => setLevel(e.target.value as CEFRLevel | "")} aria-label="Filter by level">
+            <option value="">All levels</option>
+            {selectableLevels.map((l) => (
+              <option key={l} value={l}>
+                {l}
+              </option>
+            ))}
+          </select>
+
           <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
             <span className="muted" style={{ fontSize: "0.85rem" }}>
               Per page
@@ -187,7 +122,7 @@ export default function VocabularyPage({ params }: { params: Promise<{ languageI
           </div>
         </div>
 
-        <VocabularyTable words={words ?? []} languageCode={language?.languageCode} />
+        <VocabularyTable words={words ?? []} languageCode={session?.language.code} />
 
         {totalPages > 1 && (
           <div

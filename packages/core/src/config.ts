@@ -16,34 +16,36 @@ export const MASTERY_LEARNING_RATE_MIN = 0.08;
 export const MASTERY_FORGETTING_PER_DAY = 0.02;
 export const MASTERY_FORGETTING_CAP = 0.25;
 
-export const REVISION_DEFAULT_LIMIT = 8;
+/** How many prioritised known words generateExercise hands the LLM to build an exercise from. */
+export const EXERCISE_CANDIDATE_LIMIT = 50;
 export const NEW_WORD_LEARNING_DEFAULT_COUNT = 10;
 
 /**
  * How many of the learner's least-mastered words getVocabulary returns for an
  * unfiltered (context-gathering) call — capped rather than the full vocabulary
- * so the LLM isn't handed hundreds of words (up to INITIAL_VOCABULARY_TARGET_BY_LEVEL)
- * before generating an exercise, and so it naturally focuses on weak spots.
+ * so the LLM isn't handed hundreds of words before generating an exercise, and
+ * so it naturally focuses on weak spots.
  */
 export const GET_VOCABULARY_CONTEXT_LIMIT = 50;
 
 export const LEARNER_CONTEXT_LIST_CAP = 10;
 
+export const CEFR_LEVELS: readonly CEFRLevel[] = ["A1", "A2", "B1", "B2", "C1", "C2"];
+
 /**
- * Target size of the INITIAL vocabulary seeded when a language is created,
- * per CEFR level — a real starting vocabulary, not a token sample. Higher
- * levels get a larger target since they build on everything below them.
- * The LLM is instructed it can reach this across multiple
- * submitInitialVocabulary calls rather than one giant response.
+ * Untouched words below the learner's current level are treated as already
+ * known — but not mastered, so revision still checks them occasionally.
  */
-export const INITIAL_VOCABULARY_TARGET_BY_LEVEL: Record<CEFRLevel, number> = {
-  A1: 300,
-  A2: 400,
-  B1: 500,
-  B2: 600,
-  C1: 700,
-  C2: 800,
-};
+export const ASSUMED_KNOWN_MASTERY = 0.7;
+export const ASSUMED_KNOWN_STATUS = "FAMILIAR" as const;
+
+export function levelsBelow(level: CEFRLevel): CEFRLevel[] {
+  return CEFR_LEVELS.slice(0, CEFR_LEVELS.indexOf(level));
+}
+
+export function levelsUpTo(level: CEFRLevel): CEFRLevel[] {
+  return CEFR_LEVELS.slice(0, CEFR_LEVELS.indexOf(level) + 1);
+}
 
 export function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));

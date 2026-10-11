@@ -43,15 +43,6 @@ export function computeNextReviewAt(status: WordStatus, wasCorrect: boolean, now
   }
 }
 
-export async function initializeProgress(
-  wordId: string,
-  tx: PrismaClientOrTx = prisma,
-): Promise<WordProgress> {
-  return tx.wordProgress.create({
-    data: { wordId, status: "NEW", mastery: 0 },
-  });
-}
-
 /**
  * Deterministic mastery update. Factors in:
  * - correctness (pulls mastery toward 1 or 0)
@@ -84,19 +75,21 @@ export function computeMastery(
 }
 
 export async function recordAnswer(
+  languageSessionId: string,
   wordId: string,
   correct: boolean,
   tx: PrismaClientOrTx = prisma,
   now: Date = new Date(),
 ): Promise<WordProgress> {
-  const progress = await tx.wordProgress.findUniqueOrThrow({ where: { wordId } });
+  const where = { languageSessionId_wordId: { languageSessionId, wordId } };
+  const progress = await tx.wordProgress.findUniqueOrThrow({ where });
 
   const mastery = computeMastery(progress, correct, now);
   const timesSeen = progress.timesSeen + 1;
   const status = deriveStatus(mastery, timesSeen);
 
   return tx.wordProgress.update({
-    where: { wordId },
+    where,
     data: {
       mastery,
       status,

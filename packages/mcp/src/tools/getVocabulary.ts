@@ -2,7 +2,7 @@ import { GET_VOCABULARY_CONTEXT_LIMIT } from "@lt/core/dist/config.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { mcpApi } from "../apiClient.js";
-import { wordStatusSchema } from "../shared.js";
+import { sessionIdSchema, wordStatusSchema } from "../shared.js";
 import { wrapTool } from "../toolHelpers.js";
 
 export function registerGetVocabulary(server: McpServer): void {
@@ -10,26 +10,23 @@ export function registerGetVocabulary(server: McpServer): void {
     "getVocabulary",
     {
       description:
-        "List the learner's vocabulary for a language, optionally filtered by search text or status. Call " +
-        `this with no filters before generateRevision or generateStory — both REQUIRE having just called this ` +
-        "tool for the same languageId (with no search/status filter) or they will fail with an error telling " +
-        "you to call this first.\n\n" +
-        `When called with no filters, this returns the learner's ${GET_VOCABULARY_CONTEXT_LIMIT} LEAST-MASTERED ` +
-        "words only (weakest first), not their entire vocabulary — this is deliberate, so you build exercises " +
-        "around their actual weak spots instead of a huge, unfocused word list. The response's `total` field " +
-        "tells you the learner's real vocabulary size if you need it. Use `search` or `status` filters if you " +
-        "need to check something specific outside this weakest-50 slice (e.g. whether a particular word is " +
-        "already known).\n\n" +
-        "Each entry is `{id, word, mastery, status, timesSeen}` — a lean check-in on which words are weak and " +
-        "how familiar they are, not a source of translations. Use your own knowledge of the language for " +
-        "meanings, or rely on generateRevision's/generateStory's returned candidates (which do include " +
-        "translations) when actually building exercises.",
+        "List the learner's vocabulary for a language session (words at or below their current level), " +
+        "optionally filtered by search text or status. Use it to answer questions about what the learner " +
+        "knows (e.g. whether a particular word is known, or how many words are still new) — you do NOT need " +
+        "it to build exercises: generateExercise already returns the words to use.\n\n" +
+        `With no filters, this returns the learner's ${GET_VOCABULARY_CONTEXT_LIMIT} LEAST-MASTERED known ` +
+        "words (weakest first); words they haven't been introduced to yet (status NEW) are left out. The " +
+        "response's `total` field tells you how many known words they have. Use `search` or `status` to check " +
+        "something specific outside this slice.\n\n" +
+        "Each entry is `{id, word, level, mastery, status, timesSeen}`.\n\n" +
+        "If the response includes a `message`, the learner hasn't been taught any words yet: follow it (call " +
+        "requestNewWords to give them a new-word lesson) instead of starting a practice exercise.",
       inputSchema: {
-        languageId: z.string().min(1),
+        sessionId: sessionIdSchema,
         search: z.string().optional(),
         status: wordStatusSchema.optional(),
       },
     },
-    (args) => wrapTool(() => mcpApi.getVocabulary(args.languageId, { search: args.search, status: args.status })),
+    (args) => wrapTool(() => mcpApi.getVocabulary(args.sessionId, { search: args.search, status: args.status })),
   );
 }

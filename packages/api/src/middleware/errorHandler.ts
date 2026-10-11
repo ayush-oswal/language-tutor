@@ -4,8 +4,7 @@ import type { NextFunction, Request, Response } from "express";
 const STATUS_BY_CODE: Record<string, number> = {
   NOT_FOUND: 404,
   VALIDATION_ERROR: 400,
-  DUPLICATE_WORD: 409,
-  DUPLICATE_LANGUAGE: 409,
+  ALREADY_ENROLLED: 409,
 };
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars

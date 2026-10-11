@@ -11,7 +11,7 @@ export function VocabularyTable({ words, languageCode }: { words: WordWithProgre
         </div>
         <p style={{ fontWeight: 600, color: "var(--text-main)" }}>No words match your search.</p>
         <p className="muted" style={{ fontSize: "0.85rem", marginTop: "0.25rem" }}>
-          Try a different keyword or add a new word above.
+          Try a different keyword or level.
         </p>
       </div>
     );
@@ -24,6 +24,7 @@ export function VocabularyTable({ words, languageCode }: { words: WordWithProgre
           <tr>
             <th>Word</th>
             <th>Translation</th>
+            <th>Level</th>
             <th>Part of Speech</th>
             <th>Status</th>
             <th>Mastery</th>
@@ -34,13 +35,12 @@ export function VocabularyTable({ words, languageCode }: { words: WordWithProgre
         </thead>
         <tbody>
           {words.map((word) => {
-            const mastery = word.progress?.mastery ?? 0;
+            const mastery = word.progress.mastery;
             const masteryPct = Math.round(mastery * 100);
-            const timesSeen = word.progress?.timesSeen ?? 0;
-            const timesCorrect = word.progress?.timesCorrect ?? 0;
-            const timesWrong = word.progress?.timesWrong ?? 0;
+            const timesSeen = word.progress.timesSeen;
+            const timesCorrect = word.progress.timesCorrect;
             const accuracyPct = timesSeen === 0 ? 0 : Math.round((timesCorrect / timesSeen) * 100);
-            const status = word.progress?.status ?? "NEW";
+            const status = word.progress.status;
 
             let statusClass = "pill-status-NEW";
             if (status === "MASTERED") statusClass = "pill-status-COMPLETED";
@@ -55,16 +55,23 @@ export function VocabularyTable({ words, languageCode }: { words: WordWithProgre
                   </div>
                 </td>
                 <td style={{ color: "var(--text-muted)" }}>
-                  {word.translation}
+                  <div>{word.translation}</div>
+                  {word.tags.length > 0 && (
+                    <div style={{ fontSize: "0.72rem", color: "var(--text-dim)", marginTop: "0.2rem" }}>
+                      {word.tags.map((t) => t.name).join(" · ")}
+                    </div>
+                  )}
                 </td>
                 <td>
-                  {word.partOfSpeech ? (
-                    <span className="pill" style={{ fontSize: "0.7rem" }}>
-                      {word.partOfSpeech}
-                    </span>
-                  ) : (
-                    <span style={{ color: "var(--text-dim)" }}>—</span>
-                  )}
+                  <span className="pill pill-level" style={{ fontSize: "0.7rem" }}>
+                    {word.level}
+                  </span>
+                </td>
+                <td>
+                  <span className="pill" style={{ fontSize: "0.7rem" }}>
+                    {word.partOfSpeech.toLowerCase()}
+                    {word.gender ? ` · ${word.gender}` : ""}
+                  </span>
                 </td>
                 <td>
                   <span className={`pill ${statusClass}`} style={{ fontSize: "0.75rem" }}>
@@ -111,7 +118,7 @@ export function VocabularyTable({ words, languageCode }: { words: WordWithProgre
                   )}
                 </td>
                 <td style={{ color: "var(--text-dim)", fontSize: "0.8rem" }}>
-                  {word.progress?.lastSeenAt ? new Date(word.progress.lastSeenAt).toLocaleDateString() : "Never"}
+                  {word.progress.lastSeenAt ? new Date(word.progress.lastSeenAt).toLocaleDateString() : "Never"}
                 </td>
               </tr>
             );

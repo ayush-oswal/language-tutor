@@ -5,6 +5,7 @@ import { errorHandler } from "./middleware/errorHandler.js";
 import { exercisesRouter } from "./routes/exercises.js";
 import { languagesRouter } from "./routes/languages.js";
 import { mcpRouter } from "./routes/mcp.js";
+import { sessionsRouter } from "./routes/sessions.js";
 import { usersRouter } from "./routes/users.js";
 import { vocabularyRouter } from "./routes/vocabulary.js";
 
@@ -17,15 +18,16 @@ export function createApp(): Express {
     res.json({ status: "ok" });
   });
 
-  // MCP-facing routes — no Clerk session; languageId (and userId only for
-  // listLanguages/createLanguage) is the trust boundary. See mcp.ts. Mounted
-  // before the "/api" catch-all below so these requests never hit Clerk auth.
+  // MCP-facing routes — no Clerk session; sessionId (and userId only for
+  // listSessions) is the trust boundary. See mcp.ts. Mounted before the
+  // "/api" catch-all below so these requests never hit Clerk auth.
   app.use("/api/mcp", mcpRouter);
 
   // Web-facing routes — Clerk session required, all data scoped to req.user.
   const webRouter = Router();
   webRouter.use(clerkAuth, resolveUser);
   webRouter.use(languagesRouter);
+  webRouter.use(sessionsRouter);
   webRouter.use(vocabularyRouter);
   webRouter.use(exercisesRouter);
   webRouter.use(usersRouter);

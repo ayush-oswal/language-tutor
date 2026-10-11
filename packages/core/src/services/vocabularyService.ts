@@ -1,149 +1,89 @@
-import { Prisma, prisma, type Word } from "@lt/db";
+import { prisma, type Prisma, type Tag, type Word, type WordProgress } from "@lt/db";
 import type { PrismaClientOrTx } from "@lt/db";
-import { DuplicateWordError } from "../errors.js";
+import { levelsUpTo } from "../config.js";
 import { shuffle } from "../shuffle.js";
 import type {
-  DedupWord,
-  NewWordInput,
+  CEFRLevel,
+  NewWordForLearning,
+  NewWordLearningPayload,
   PaginatedWords,
-  VocabularyStats,
+  WordSentence,
   WordStatus,
   WordWithProgress,
 } from "../types.js";
-import { initializeProgress } from "./wordProgressService.js";
 
 export function normalizeWord(raw: string): string {
   return raw.normalize("NFC").trim().toLowerCase();
 }
 
-function isUniqueConstraintError(err: unknown): boolean {
-  return err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002";
-}
+type ProgressRowWithWord = WordProgress & { word: Word & { tags: Tag[] } };
 
-export async function addWord(
-  languageId: string,
-  input: NewWordInput,
-  tx: PrismaClientOrTx = prisma,
-): Promise<WordWithProgress> {
-  const normalizedWord = normalizeWord(input.word);
-  try {
-    const word = await tx.word.create({
-      data: {
-        languageId,
-        word: input.word,
-        normalizedWord,
-        translation: input.translation,
-        partOfSpeech: input.partOfSpeech,
-        metadata: input.metadata as Prisma.InputJsonValue | undefined,
-      },
-    });
-    const progress = await initializeProgress(word.id, tx);
-    return { ...word, progress };
-  } catch (err) {
-    if (isUniqueConstraintError(err)) {
-      throw new DuplicateWordError(input.word);
-    }
-    throw err;
-  }
+function toWordWithProgress(row: ProgressRowWithWord): WordWithProgress {
+  const { word, ...progress } = row;
+  return { ...word, progress };
 }
 
 /**
- * Idempotent: words whose normalizedWord already exists for this language are
- * skipped rather than erroring, since generation flows re-check dedup
- * themselves but the DB constraint remains the final backstop.
- */
-export async function bulkInsertWords(
-  languageId: string,
-  words: NewWordInput[],
-  tx: PrismaClientOrTx = prisma,
-): Promise<{ inserted: Word[]; skipped: string[] }> {
-  const inserted: Word[] = [];
-  const skipped: string[] = [];
-
-  for (const input of words) {
-    const normalizedWord = normalizeWord(input.word);
-    const existing = await tx.word.findUnique({
-      where: { languageId_normalizedWord: { languageId, normalizedWord } },
-    });
-    if (existing) {
-      skipped.push(input.word);
-      continue;
-    }
-    try {
-      const word = await tx.word.create({
-        data: {
-          languageId,
-          word: input.word,
-          normalizedWord,
-          translation: input.translation,
-          partOfSpeech: input.partOfSpeech,
-          metadata: input.metadata as Prisma.InputJsonValue | undefined,
-        },
-      });
-      await initializeProgress(word.id, tx);
-      inserted.push(word);
-    } catch (err) {
-      if (isUniqueConstraintError(err)) {
-        skipped.push(input.word);
-        continue;
-      }
-      throw err;
-    }
-  }
-
-  return { inserted, skipped };
-}
-
-/**
- * `page`/`pageSize` are both optional — omit either to get the full matching
- * list back (used by dedup-adjacent callers); the HTTP API always supplies
- * both so the frontend's vocabulary view is paginated. `sortBy: "mastery"`
- * (weakest first) is what the MCP getVocabulary tool uses to hand the LLM a
- * capped, focus-worthy slice instead of the entire vocabulary.
+ * Lists the session's words at or below its current level. `page`/`pageSize`
+ * are both optional — omit either to get the full matching list back.
+ * `sortBy: "mastery"` (weakest first) is what the MCP getVocabulary tool uses
+ * to hand the LLM a capped, focus-worthy slice instead of the whole vocabulary.
  */
 export async function listWords(
-  languageId: string,
-  opts: { search?: string; status?: WordStatus; page?: number; pageSize?: number; sortBy?: "word" | "mastery" } = {},
+  sessionId: string,
+  currentLevel: CEFRLevel,
+  opts: {
+    search?: string;
+    status?: WordStatus;
+    level?: CEFRLevel;
+    excludeNew?: boolean;
+    page?: number;
+    pageSize?: number;
+    sortBy?: "word" | "mastery";
+  } = {},
   tx: PrismaClientOrTx = prisma,
 ): Promise<PaginatedWords> {
-  const where = {
-    languageId,
-    ...(opts.search
-      ? {
-          OR: [
-            { word: { contains: opts.search, mode: "insensitive" as const } },
-            { translation: { contains: opts.search, mode: "insensitive" as const } },
-          ],
-        }
-      : {}),
-    ...(opts.status ? { progress: { status: opts.status } } : {}),
+  const allowedLevels = levelsUpTo(currentLevel);
+  const levels = opts.level ? allowedLevels.filter((l) => l === opts.level) : allowedLevels;
+
+  const where: Prisma.WordProgressWhereInput = {
+    languageSessionId: sessionId,
+    ...(opts.status ? { status: opts.status } : opts.excludeNew ? { status: { not: "NEW" } } : {}),
+    word: {
+      level: { in: levels },
+      ...(opts.search
+        ? {
+            OR: [
+              { word: { contains: opts.search, mode: "insensitive" } },
+              { translation: { contains: opts.search, mode: "insensitive" } },
+            ],
+          }
+        : {}),
+    },
   };
 
-  const total = await tx.word.count({ where });
+  const total = await tx.wordProgress.count({ where });
+  const include = { word: { include: { tags: true } } } as const;
 
   if (opts.sortBy === "mastery") {
-    // Most words share the same mastery (e.g. 0 before anything's been drilled),
-    // so an alphabetical tiebreak would always surface the same words first —
-    // shuffle within each mastery tier instead, for variety across calls.
-    const all = await tx.word.findMany({
-      where,
-      include: { progress: true },
-      orderBy: [{ progress: { mastery: "asc" } }],
-    });
-    const ordered = shuffleWithinMasteryTiers(all);
+    // Most words share the same mastery (e.g. every untouched word), so a fixed
+    // tiebreak would always surface the same words first — shuffle within each
+    // mastery tier instead, for variety across calls.
+    const all = await tx.wordProgress.findMany({ where, include, orderBy: [{ mastery: "asc" }] });
+    const ordered = shuffleWithinMasteryTiers(all.map(toWordWithProgress));
     const page = Math.max(opts.page ?? 1, 1);
     const words = opts.pageSize ? ordered.slice((page - 1) * opts.pageSize, page * opts.pageSize) : ordered;
     return { words, total, page, pageSize: opts.pageSize ?? total };
   }
 
-  const words = await tx.word.findMany({
+  const rows = await tx.wordProgress.findMany({
     where,
-    include: { progress: true },
-    orderBy: [{ word: "asc" }],
+    include,
+    orderBy: [{ word: { level: "asc" } }, { word: { word: "asc" } }],
     ...(opts.pageSize ? { skip: (Math.max(opts.page ?? 1, 1) - 1) * opts.pageSize, take: opts.pageSize } : {}),
   });
 
-  return { words, total, page: opts.page ?? 1, pageSize: opts.pageSize ?? total };
+  return { words: rows.map(toWordWithProgress), total, page: opts.page ?? 1, pageSize: opts.pageSize ?? total };
 }
 
 function shuffleWithinMasteryTiers(words: WordWithProgress[]): WordWithProgress[] {
@@ -152,7 +92,7 @@ function shuffleWithinMasteryTiers(words: WordWithProgress[]): WordWithProgress[
   let tierMastery: number | null = null;
 
   for (const word of words) {
-    const mastery = word.progress?.mastery ?? 0;
+    const mastery = word.progress.mastery;
     if (tierMastery !== null && mastery !== tierMastery) {
       result.push(...shuffle(tier));
       tier = [];
@@ -164,41 +104,85 @@ function shuffleWithinMasteryTiers(words: WordWithProgress[]): WordWithProgress[
   return result;
 }
 
-export async function getVocabularyForDedup(
-  languageId: string,
-  tx: PrismaClientOrTx = prisma,
-): Promise<DedupWord[]> {
-  const words = await tx.word.findMany({
-    where: { languageId },
-    select: { word: true, normalizedWord: true, translation: true },
-  });
-  return words;
+export function parseSentences(value: Prisma.JsonValue): WordSentence[] {
+  return Array.isArray(value) ? (value as unknown as WordSentence[]) : [];
 }
 
-export async function getVocabularyStats(
-  languageId: string,
-  tx: PrismaClientOrTx = prisma,
-): Promise<VocabularyStats> {
-  const words = await tx.word.findMany({
-    where: { languageId },
-    select: { progress: { select: { status: true } } },
+export function toNewWordForLearning(word: Word & { tags: Tag[] }): NewWordForLearning {
+  return {
+    wordId: word.id,
+    word: word.word,
+    translation: word.translation,
+    partOfSpeech: word.partOfSpeech,
+    gender: word.gender,
+    sentences: parseSentences(word.sentences),
+    tags: word.tags.map((t) => t.name),
+  };
+}
+
+/** Word ids already being taught by a not-yet-completed NEW_WORD_LEARNING exercise in this session. */
+async function reservedNewWordIds(sessionId: string): Promise<Set<string>> {
+  const pending = await prisma.exercise.findMany({
+    where: { languageSessionId: sessionId, type: "NEW_WORD_LEARNING", status: { not: "COMPLETED" } },
+    select: { payload: true },
   });
-  const stats: VocabularyStats = { total: words.length, new: 0, learning: 0, familiar: 0, mastered: 0 };
-  for (const w of words) {
-    switch (w.progress?.status) {
-      case "NEW":
-        stats.new++;
-        break;
-      case "LEARNING":
-        stats.learning++;
-        break;
-      case "FAMILIAR":
-        stats.familiar++;
-        break;
-      case "MASTERED":
-        stats.mastered++;
-        break;
-    }
-  }
-  return stats;
+  return new Set(pending.flatMap((e) => (e.payload as unknown as NewWordLearningPayload).words.map((w) => w.wordId)));
+}
+
+/**
+ * Picks words at the learner's current level they haven't been introduced to
+ * yet (status NEW), skipping any already in a pending new-word lesson. Ranked
+ * words go first (most common first); unranked ones follow in random order.
+ */
+export async function pickNewWords(
+  sessionId: string,
+  currentLevel: CEFRLevel,
+  count: number,
+  opts: { tag?: string } = {},
+): Promise<{ words: NewWordForLearning[]; remaining: number }> {
+  const [reserved, rows] = await Promise.all([
+    reservedNewWordIds(sessionId),
+    prisma.wordProgress.findMany({
+      where: {
+        languageSessionId: sessionId,
+        status: "NEW",
+        word: {
+          level: currentLevel,
+          ...(opts.tag ? { tags: { some: { name: { equals: opts.tag, mode: "insensitive" } } } } : {}),
+        },
+      },
+      include: { word: { include: { tags: true } } },
+    }),
+  ]);
+
+  const available = rows.filter((r) => !reserved.has(r.wordId)).map((r) => r.word);
+  const ranked = available.filter((w) => w.rank !== null).sort((a, b) => a.rank! - b.rank!);
+  const unranked = shuffle(available.filter((w) => w.rank === null));
+
+  return {
+    words: [...ranked, ...unranked].slice(0, count).map(toNewWordForLearning),
+    remaining: available.length,
+  };
+}
+
+/** The subset of `wordIds` that are un-introduced (NEW) words at the session's current level. */
+export async function getNewWordsForLearning(
+  sessionId: string,
+  currentLevel: CEFRLevel,
+  wordIds: string[],
+): Promise<Map<string, NewWordForLearning>> {
+  const rows = await prisma.wordProgress.findMany({
+    where: { languageSessionId: sessionId, status: "NEW", wordId: { in: wordIds }, word: { level: currentLevel } },
+    include: { word: { include: { tags: true } } },
+  });
+  return new Map(rows.map((r) => [r.wordId, toNewWordForLearning(r.word)]));
+}
+
+export async function listTagsForLevel(languageId: string, level: CEFRLevel): Promise<string[]> {
+  const tags = await prisma.tag.findMany({
+    where: { words: { some: { languageId, level } } },
+    orderBy: { name: "asc" },
+    select: { name: true },
+  });
+  return tags.map((t) => t.name);
 }

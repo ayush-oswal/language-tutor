@@ -1,25 +1,19 @@
-import {
-  completeExercise,
-  getExercise,
-  getLanguage,
-  listExercises,
-  type ExerciseStatus,
-  type ExerciseType,
-} from "@lt/core";
+import { completeExercise, getExercise, getSession, listExercises } from "@lt/core";
+import { ExerciseStatus, ExerciseType } from "@lt/db";
 import { Router } from "express";
 import { completeExerciseBodySchema } from "../dto/exercises.dto.js";
 import { asyncHandler } from "../middleware/errorHandler.js";
-import { validateBody } from "../middleware/validate.js";
+import { queryEnum, validateBody } from "../middleware/validate.js";
 
 export const exercisesRouter = Router();
 
 exercisesRouter.get(
-  "/languages/:languageId/exercises",
+  "/sessions/:sessionId/exercises",
   asyncHandler(async (req, res) => {
-    await getLanguage(req.params.languageId, { userId: req.user!.id });
-    const type = typeof req.query.type === "string" ? (req.query.type as ExerciseType) : undefined;
-    const status = typeof req.query.status === "string" ? (req.query.status as ExerciseStatus) : undefined;
-    res.json(await listExercises(req.params.languageId, { type, status }));
+    const session = await getSession(req.params.sessionId, { userId: req.user!.id });
+    const type = queryEnum(req.query.type, ExerciseType);
+    const status = queryEnum(req.query.status, ExerciseStatus);
+    res.json(await listExercises(session.id, { type, status }));
   }),
 );
 
@@ -27,7 +21,7 @@ exercisesRouter.get(
   "/exercises/:exerciseId",
   asyncHandler(async (req, res) => {
     const exercise = await getExercise(req.params.exerciseId);
-    await getLanguage(exercise.languageId, { userId: req.user!.id });
+    await getSession(exercise.languageSessionId, { userId: req.user!.id });
     res.json(exercise);
   }),
 );
@@ -37,7 +31,7 @@ exercisesRouter.post(
   validateBody(completeExerciseBodySchema),
   asyncHandler(async (req, res) => {
     const exercise = await getExercise(req.params.exerciseId);
-    await getLanguage(exercise.languageId, { userId: req.user!.id });
+    await getSession(exercise.languageSessionId, { userId: req.user!.id });
     res.json(await completeExercise(req.params.exerciseId, req.body.answers));
   }),
 );

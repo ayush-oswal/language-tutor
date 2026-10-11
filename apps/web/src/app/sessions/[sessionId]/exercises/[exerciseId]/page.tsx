@@ -8,7 +8,7 @@ import { exerciseRegistry } from "@/components/exercises/registry";
 import { IconArrowLeft, IconArrowRight, IconBook, IconCheck, IconSparkles, IconTrophy } from "@/components/Icons";
 import { useApiClient } from "@/lib/hooks/useApiClient";
 import { useExercise } from "@/lib/hooks/useExercises";
-import { useLanguage } from "@/lib/hooks/useLanguage";
+import { useSession } from "@/lib/hooks/useSession";
 
 const EXERCISE_TYPE_LABELS: Record<string, string> = {
   NEW_WORD_LEARNING: "New Word Learning",
@@ -22,10 +22,10 @@ const EXERCISE_TYPE_LABELS: Record<string, string> = {
 export default function ExercisePage({
   params,
 }: {
-  params: Promise<{ languageId: string; exerciseId: string }>;
+  params: Promise<{ sessionId: string; exerciseId: string }>;
 }) {
-  const { languageId, exerciseId } = use(params);
-  const { language } = useLanguage(languageId);
+  const { sessionId, exerciseId } = use(params);
+  const { session } = useSession(sessionId);
   const client = useApiClient();
   const { exercise, isLoading, mutate } = useExercise(exerciseId);
   const [result, setResult] = useState<ExerciseResult | null>(null);
@@ -52,7 +52,7 @@ export default function ExercisePage({
       <nav className="breadcrumb" aria-label="Breadcrumb">
         <Link href="/">My Languages</Link>
         <span className="breadcrumb-separator">/</span>
-        <Link href={`/languages/${languageId}`}>{language?.name ?? "…"}</Link>
+        <Link href={`/sessions/${sessionId}`}>{session?.language.name ?? "…"}</Link>
         <span className="breadcrumb-separator">/</span>
         <span className="breadcrumb-active">{typeLabel}</span>
       </nav>
@@ -80,7 +80,7 @@ export default function ExercisePage({
             Session Complete!
           </h2>
           <p className="muted" style={{ maxWidth: "420px", margin: "0 auto 1.5rem" }}>
-            Great job practicing {language?.name ?? "your language"}. Your spaced repetition progress has been recorded.
+            Great job practicing {session?.language.name ?? "your language"}. Your spaced repetition progress has been recorded.
           </p>
 
           <div className="score-circle">
@@ -120,13 +120,13 @@ export default function ExercisePage({
           </div>
 
           <div style={{ display: "flex", gap: "0.75rem", justifyContent: "center", flexWrap: "wrap" }}>
-            <Link href={`/languages/${languageId}`}>
+            <Link href={`/sessions/${sessionId}`}>
               <button type="button" className="btn" style={{ padding: "0.75rem 1.5rem" }}>
                 <span>Back to Dashboard</span>
                 <IconArrowRight className="w-4 h-4" />
               </button>
             </Link>
-            <Link href={`/languages/${languageId}/vocabulary`}>
+            <Link href={`/sessions/${sessionId}/vocabulary`}>
               <button type="button" className="btn btn-secondary" style={{ padding: "0.75rem 1.5rem" }}>
                 <IconBook className="w-4 h-4" />
                 <span>Review Vocabulary</span>
@@ -139,7 +139,7 @@ export default function ExercisePage({
       ) : (
         <Component
           exercise={exercise}
-          languageCode={language?.languageCode}
+          languageCode={session?.language.code}
           onSubmit={async (answers) => {
             const res = await client.completeExercise(exerciseId, answers);
             setRetaking(false);

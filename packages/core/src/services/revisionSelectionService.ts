@@ -1,13 +1,15 @@
-import { prisma, type Word, type WordProgress } from "@lt/db";
-import { REVISION_DEFAULT_LIMIT } from "../config.js";
+import { prisma, type Prisma, type Word, type WordProgress } from "@lt/db";
+import { levelsUpTo, EXERCISE_CANDIDATE_LIMIT } from "../config.js";
 import { shuffle } from "../shuffle.js";
-import type { RevisionCandidate } from "../types.js";
+import type { CEFRLevel, RevisionCandidate } from "../types.js";
 
 export function toRevisionCandidate(word: Word, progress: WordProgress): RevisionCandidate {
   return {
     wordId: word.id,
     word: word.word,
     translation: word.translation,
+    partOfSpeech: word.partOfSpeech,
+    level: word.level,
     mastery: progress.mastery,
     status: progress.status,
     timesSeen: progress.timesSeen,
@@ -19,37 +21,50 @@ export function toRevisionCandidate(word: Word, progress: WordProgress): Revisio
 }
 
 /**
- * Ranks every committed word in the learner's vocabulary for revision —
- * this deliberately includes never-yet-drilled words (timesSeen === 0),
- * since bulk-imported initial vocabulary starts at timesSeen 0 too and
- * should be immediately revisable, not stuck waiting for a first exposure
- * that revision itself is supposed to provide. Brand-new vocabulary is kept
- * out of revision structurally instead: NEW_WORD_LEARNING candidates aren't
- * real Word rows at all until the learner completes that exercise.
+ * Words eligible for revision/story exercises: anything at or below the
+ * session's current level that the learner already knows or has been taught.
+ * NEW words (not yet introduced) are excluded; they come in through
+ * new-word learning instead.
  */
+export function revisableWordsWhere(sessionId: string, currentLevel: CEFRLevel): Prisma.WordProgressWhereInput {
+  return {
+    languageSessionId: sessionId,
+    status: { not: "NEW" },
+    word: { level: { in: levelsUpTo(currentLevel) } },
+  };
+}
+
+export async function getRevisableWordIds(sessionId: string, currentLevel: CEFRLevel): Promise<Set<string>> {
+  const rows = await prisma.wordProgress.findMany({
+    where: revisableWordsWhere(sessionId, currentLevel),
+    select: { wordId: true },
+  });
+  return new Set(rows.map((r) => r.wordId));
+}
+
+/** Ranks every revisable word in the session and returns the top `limit`, most in need of practice first. */
 export async function selectRevisionCandidates(
-  languageId: string,
+  sessionId: string,
+  currentLevel: CEFRLevel,
   opts: { limit?: number } = {},
 ): Promise<RevisionCandidate[]> {
-  const limit = opts.limit ?? REVISION_DEFAULT_LIMIT;
+  const limit = opts.limit ?? EXERCISE_CANDIDATE_LIMIT;
   const now = new Date();
 
-  const words = await prisma.word.findMany({
-    where: { languageId },
-    include: { progress: true },
+  const rows = await prisma.wordProgress.findMany({
+    where: revisableWordsWhere(sessionId, currentLevel),
+    include: { word: true },
   });
 
-  const scored = shuffle(words)
-    .filter((w): w is Word & { progress: WordProgress } => w.progress !== null)
-    .map((w) => {
-      const p = w.progress;
+  const scored = shuffle(rows)
+    .map(({ word, ...p }) => {
       const overdue = p.nextReviewAt !== null && p.nextReviewAt <= now;
       const wrongRatio = p.timesWrong / Math.max(p.timesSeen, 1);
-      // Rounded to whole days so a same-batch bulk import (created seconds
-      // apart) doesn't produce razor-thin, permanently-stable score
-      // differences that always rank the same handful of words first.
-      const daysSinceCreated = Math.floor((now.getTime() - w.createdAt.getTime()) / (1000 * 60 * 60 * 24));
-      const recencyBoost = Math.max(0, 1 - daysSinceCreated / 30);
+      // Days since the word entered the learner's deck, rounded to whole days so
+      // rows created in the same batch don't produce razor-thin, permanently
+      // stable score differences that always rank the same handful first.
+      const daysSinceAdded = Math.floor((now.getTime() - p.createdAt.getTime()) / (1000 * 60 * 60 * 24));
+      const recencyBoost = Math.max(0, 1 - daysSinceAdded / 30);
       const reviewedWithinLastDay =
         p.lastSeenAt !== null && now.getTime() - p.lastSeenAt.getTime() < 24 * 60 * 60 * 1000;
 
@@ -60,20 +75,15 @@ export async function selectRevisionCandidates(
         wrongRatio * 1.0 +
         recencyBoost * 0.5 -
         (p.mastery > 0.85 && reviewedWithinLastDay ? 1.0 : 0) +
-        // Small per-call jitter so genuinely close-scoring words (e.g. a
-        // whole freshly-imported vocabulary sharing the same score) rotate
-        // across calls instead of the same subset winning every time —
-        // small enough that it rarely reorders words with a real priority
-        // gap (overdue, LEARNING status, wrong-answer history, etc).
+        // Small per-call jitter so genuinely close-scoring words rotate across
+        // calls instead of the same subset winning every time — small enough
+        // that it rarely reorders words with a real priority gap.
         Math.random() * 0.4;
 
-      return { word: w, progress: p, score };
+      return { word, progress: p, score };
     })
     .sort((a, b) => b.score - a.score)
-    .slice(0, limit)
-    // Selection uses the composite score above; presentation order to the
-    // LLM always starts with the least-mastered word first.
-    .sort((a, b) => a.progress.mastery - b.progress.mastery);
+    .slice(0, limit);
 
   return scored.map(({ word, progress }) => toRevisionCandidate(word, progress));
 }

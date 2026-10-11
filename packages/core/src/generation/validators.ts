@@ -1,8 +1,8 @@
 import type { ValidationResult } from "../types.js";
-import { normalizeWord } from "../services/vocabularyService.js";
 import type { NewWordExerciseSubmission } from "./schemas/newWordExercise.schema.js";
 import type { RevisionExerciseSubmission } from "./schemas/revisionExercise.schema.js";
 import type { StoryExerciseSubmission } from "./schemas/storyExercise.schema.js";
+import type { ExerciseSubmission } from "./schemas/exercise.schema.js";
 
 function ok(): ValidationResult {
   return { valid: true, errors: [] };
@@ -12,31 +12,26 @@ function fail(errors: string[]): ValidationResult {
   return { valid: false, errors };
 }
 
-export function validateNoDuplicateWords(
-  candidateWords: { word: string }[],
-  existing: { normalizedWord: string }[],
-): ValidationResult {
-  const existingSet = new Set(existing.map((w) => w.normalizedWord));
-  const errors: string[] = [];
-  const seen = new Set<string>();
-  for (const c of candidateWords) {
-    const normalized = normalizeWord(c.word);
-    if (existingSet.has(normalized)) errors.push(`Word already known to the learner: "${c.word}"`);
-    if (seen.has(normalized)) errors.push(`Duplicate word within this submission: "${c.word}"`);
-    seen.add(normalized);
-  }
-  return errors.length === 0 ? ok() : fail(errors);
+export function collectNewWordIds(submission: NewWordExerciseSubmission): string[] {
+  return [
+    ...new Set([...submission.stage2.items.map((i) => i.wordId), ...submission.stage3.questions.map((q) => q.wordId)]),
+  ];
 }
 
-export function validateNewWordExerciseIntegrity(submission: NewWordExerciseSubmission): ValidationResult {
+/** `allowedWordIds`: the learner's un-introduced (NEW) words at their current level. */
+export function validateNewWordExerciseIntegrity(
+  submission: NewWordExerciseSubmission,
+  allowedWordIds: Set<string>,
+): ValidationResult {
   const errors: string[] = [];
-  const tempIds = new Set(submission.candidates.map((c) => c.tempId));
   const itemIds = new Set(submission.stage2.items.map((i) => i.id));
   const optionIds = new Set(submission.stage2.options.map((o) => o.id));
 
   for (const item of submission.stage2.items) {
-    if (!tempIds.has(item.tempId)) {
-      errors.push(`stage2 item "${item.id}" references unknown tempId "${item.tempId}"`);
+    if (!allowedWordIds.has(item.wordId)) {
+      errors.push(
+        `stage2 item "${item.id}" references wordId "${item.wordId}", which is not a new word at the learner's current level`,
+      );
     }
   }
   for (const item of submission.stage2.items) {
@@ -50,8 +45,13 @@ export function validateNewWordExerciseIntegrity(submission: NewWordExerciseSubm
   }
 
   for (const q of submission.stage3.questions) {
-    if (!tempIds.has(q.tempId)) {
-      errors.push(`stage3 question "${q.id}" references unknown tempId "${q.tempId}"`);
+    if (!allowedWordIds.has(q.wordId)) {
+      errors.push(
+        `stage3 question "${q.id}" references wordId "${q.wordId}", which is not a new word at the learner's current level`,
+      );
+    }
+    if ((q.sentence.match(/_{3,}/g) ?? []).length !== 1) {
+      errors.push(`stage3 question "${q.id}": sentence must contain the blank "___" exactly once`);
     }
     const qOptionIds = new Set(q.options.map((o) => o.id));
     const answer = submission.answerKey.stage3Answers[q.id];
@@ -84,7 +84,7 @@ export function validateRevisionExerciseIntegrity(
 
   for (const wordId of collectWordIds(submission)) {
     if (!allowedWordIds.has(wordId)) {
-      errors.push(`References wordId "${wordId}" which is not one of the given revision candidates`);
+      errors.push(`References wordId "${wordId}" which is not one of the learner's revisable words at their current level`);
     }
   }
 
@@ -129,7 +129,7 @@ export function validateStoryExerciseIntegrity(
     if (node.kind === "narrative") {
       for (const wordId of node.wordIds ?? []) {
         if (!allowedWordIds.has(wordId)) {
-          errors.push(`narrative node "${node.id}" references wordId "${wordId}" which is not one of the given candidates`);
+          errors.push(`narrative node "${node.id}" references wordId "${wordId}" which is not one of the learner's revisable words at their current level`);
         }
       }
       continue;
@@ -137,13 +137,13 @@ export function validateStoryExerciseIntegrity(
     if (node.questionType === "MATCHING") {
       for (const item of node.items) {
         if (!allowedWordIds.has(item.wordId)) {
-          errors.push(`node "${node.id}" item "${item.id}" references wordId "${item.wordId}" which is not one of the given candidates`);
+          errors.push(`node "${node.id}" item "${item.id}" references wordId "${item.wordId}" which is not one of the learner's revisable words at their current level`);
         }
       }
     } else {
       for (const wordId of node.wordIds) {
         if (!allowedWordIds.has(wordId)) {
-          errors.push(`node "${node.id}" references wordId "${wordId}" which is not one of the given candidates`);
+          errors.push(`node "${node.id}" references wordId "${wordId}" which is not one of the learner's revisable words at their current level`);
         }
       }
     }
@@ -184,4 +184,14 @@ export function validateStoryExerciseIntegrity(
   }
 
   return errors.length === 0 ? ok() : fail(errors);
+}
+
+/** `allowedWordIds`: the learner's revisable words (known or already taught, at or below their current level). */
+export function validateExerciseIntegrity(
+  submission: ExerciseSubmission,
+  allowedWordIds: Set<string>,
+): ValidationResult {
+  return submission.type === "STORY"
+    ? validateStoryExerciseIntegrity(submission, allowedWordIds)
+    : validateRevisionExerciseIntegrity(submission, allowedWordIds);
 }

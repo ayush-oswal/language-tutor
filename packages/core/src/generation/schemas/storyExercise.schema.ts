@@ -88,6 +88,7 @@ const storyAnswerKeyEntrySchema = z.discriminatedUnion("questionType", [
 ]);
 
 export const storyExerciseSubmissionSchema = z.object({
+  type: z.literal("STORY"),
   payload: z.object({
     nodes: z
       .array(z.union([narrativeNodeSchema, questionNodeSchema]))
