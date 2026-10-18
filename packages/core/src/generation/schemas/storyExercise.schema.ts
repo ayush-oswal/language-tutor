@@ -1,10 +1,22 @@
 import { z } from "zod";
-import { acceptedAnswersSchema, hintSchema, optionSchema, wordIdsSchema } from "./shared.js";
+import {
+  acceptedAnswersSchema,
+  fillBlankWordBankSchema,
+  hintSchema,
+  MC_PROMPT_RULE,
+  naturalSentenceSchema,
+  optionLanguageSchema,
+  optionSchema,
+  translationWordBankSchema,
+  wordIdsSchema,
+} from "./shared.js";
 
 const narrativeNodeSchema = z.object({
   id: z.string().min(1),
   kind: z.literal("narrative"),
-  text: z.string().min(1),
+  text: naturalSentenceSchema(
+    "Target-language narrative that reads like a real-life scene. Each of its sentences follows this rule:",
+  ),
   translation: z
     .string()
     .min(1)
@@ -18,7 +30,7 @@ const narrativeNodeSchema = z.object({
 const storyMatchingItemSchema = z.object({
   id: z.string().min(1),
   wordId: z.string().min(1),
-  text: z.string().min(1),
+  text: z.string().min(1).describe("A target-language word."),
   hint: hintSchema,
 });
 
@@ -27,7 +39,7 @@ const mcQuestionNodeSchema = z.object({
   kind: z.literal("question"),
   questionType: z.literal("MULTIPLE_CHOICE"),
   wordIds: wordIdsSchema,
-  prompt: z.string().min(1),
+  prompt: z.string().min(1).describe(MC_PROMPT_RULE),
   translation: z
     .string()
     .min(1)
@@ -35,6 +47,7 @@ const mcQuestionNodeSchema = z.object({
       "English translation of `prompt`, shown only behind a 'Show Translation' toggle — never displayed by default.",
     ),
   options: z.array(optionSchema).min(2),
+  optionLanguage: optionLanguageSchema,
   hint: hintSchema,
 });
 
@@ -43,8 +56,9 @@ const translationQuestionNodeSchema = z.object({
   kind: z.literal("question"),
   questionType: z.literal("TRANSLATION"),
   wordIds: wordIdsSchema,
-  prompt: z.string().min(1),
+  prompt: naturalSentenceSchema("The sentence to translate, in the source language for `direction`."),
   direction: z.enum(["TO_TARGET", "TO_NATIVE"]),
+  wordBank: translationWordBankSchema.optional(),
   hint: hintSchema,
 });
 
@@ -53,7 +67,7 @@ const fillBlankQuestionNodeSchema = z.object({
   kind: z.literal("question"),
   questionType: z.literal("FILL_BLANK"),
   wordIds: wordIdsSchema,
-  sentence: z.string().min(1).describe("Use '___' (three underscores) to mark the blank to fill in."),
+  sentence: naturalSentenceSchema("Target-language sentence from the story; use '___' (three underscores) to mark the blank."),
   translation: z
     .string()
     .min(1)
@@ -62,6 +76,7 @@ const fillBlankQuestionNodeSchema = z.object({
         "'Show Translation' toggle — never displayed by default.",
     ),
   acceptedAnswers: acceptedAnswersSchema,
+  wordBank: fillBlankWordBankSchema,
   hint: hintSchema,
 });
 
@@ -70,7 +85,7 @@ const matchingQuestionNodeSchema = z.object({
   kind: z.literal("question"),
   questionType: z.literal("MATCHING"),
   items: z.array(storyMatchingItemSchema).min(2).max(4).describe("2-4 word/translation pairs to match at this point in the story."),
-  options: z.array(optionSchema).min(2),
+  options: z.array(optionSchema).min(2).describe("The English translations, in shuffled order."),
 });
 
 const questionNodeSchema = z.discriminatedUnion("questionType", [

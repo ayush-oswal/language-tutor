@@ -55,6 +55,9 @@ export default function ExercisePage({
         <Link href={`/sessions/${sessionId}`}>{session?.language.name ?? "…"}</Link>
         <span className="breadcrumb-separator">/</span>
         <span className="breadcrumb-active">{typeLabel}</span>
+        <span className="pill pill-level" style={{ marginLeft: "0.5rem" }} title="Level this exercise was generated for">
+          {exercise.level}
+        </span>
       </nav>
 
       {result ? (

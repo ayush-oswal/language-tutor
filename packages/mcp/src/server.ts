@@ -16,7 +16,7 @@ import { registerSubmitExercise } from "./tools/submitExercise.js";
  * exclusively (see packages/api), so there are deliberately no tools for them.
  */
 export function createServer(): McpServer {
-  const server = new McpServer({ name: "language-tutor-mcp", version: "0.2.0" });
+  const server = new McpServer({ name: "language-tutor-mcp", version: "0.3.0" });
 
   registerListSessions(server);
   registerGetSession(server);

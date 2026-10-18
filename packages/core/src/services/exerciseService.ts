@@ -1,12 +1,21 @@
 import { Prisma, prisma, type Exercise } from "@lt/db";
 import { NotFoundError } from "../errors.js";
 import { scoreExercise } from "../scoring/index.js";
-import type { ExerciseResult, ExerciseStatus, ExerciseSummary, ExerciseType, ExerciseWithAttempts } from "../types.js";
+import type {
+  CEFRLevel,
+  ExerciseResult,
+  ExerciseStatus,
+  ExerciseSummary,
+  ExerciseType,
+  ExerciseWithAttempts,
+} from "../types.js";
 import { recordAnswer } from "./wordProgressService.js";
 
 export async function createExerciseFromSubmission(
   languageSessionId: string,
   type: ExerciseType,
+  /** The session's current level, recorded so the exercise keeps the level it was generated for. */
+  level: CEFRLevel,
   payload: unknown,
   answerKey: unknown,
   generationContext?: unknown,
@@ -15,6 +24,7 @@ export async function createExerciseFromSubmission(
     data: {
       languageSessionId,
       type,
+      level,
       status: "NEW",
       payload: payload as Prisma.InputJsonValue,
       answerKey: answerKey as Prisma.InputJsonValue,
@@ -50,7 +60,7 @@ export async function listExercises(
       ...(opts.status ? { status: opts.status } : {}),
     },
     orderBy: { createdAt: "desc" },
-    select: { id: true, languageSessionId: true, type: true, status: true, createdAt: true, completedAt: true },
+    select: { id: true, languageSessionId: true, type: true, level: true, status: true, createdAt: true, completedAt: true },
   });
 }
 

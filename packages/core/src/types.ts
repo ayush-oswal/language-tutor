@@ -134,11 +134,16 @@ export interface McOption {
   text: string;
 }
 
+/** The language a question's options are written in — TARGET is the language being learned, NATIVE is English. */
+export type OptionLanguage = "TARGET" | "NATIVE";
+
 export interface MultipleChoiceQuestion {
   id: string;
   wordIds: string[];
   prompt: string;
   options: McOption[];
+  /** Absent on exercises generated before it existed; treat as TARGET. */
+  optionLanguage?: OptionLanguage;
   hint: string;
 }
 
@@ -175,6 +180,8 @@ export interface TranslationQuestion {
   wordIds: string[];
   prompt: string;
   direction: "TO_TARGET" | "TO_NATIVE";
+  /** Target-language tiles for TO_TARGET questions; absent means the learner types the answer. */
+  wordBank?: string[];
   hint: string;
 }
 
@@ -194,6 +201,8 @@ export interface FillBlankQuestion {
   sentence: string;
   translation?: string;
   acceptedAnswers: string[];
+  /** Absent on exercises generated before word banks; the learner types the answer instead. */
+  wordBank?: string[];
   hint: string;
 }
 
@@ -228,9 +237,19 @@ export type StoryQuestionNode =
       prompt: string;
       translation: string;
       options: McOption[];
+      optionLanguage?: OptionLanguage;
       hint: string;
     }
-  | { id: string; kind: "question"; questionType: "TRANSLATION"; wordIds: string[]; prompt: string; direction: "TO_TARGET" | "TO_NATIVE"; hint: string }
+  | {
+      id: string;
+      kind: "question";
+      questionType: "TRANSLATION";
+      wordIds: string[];
+      prompt: string;
+      direction: "TO_TARGET" | "TO_NATIVE";
+      wordBank?: string[];
+      hint: string;
+    }
   | {
       id: string;
       kind: "question";
@@ -239,6 +258,7 @@ export type StoryQuestionNode =
       sentence: string;
       translation: string;
       acceptedAnswers: string[];
+      wordBank?: string[];
       hint: string;
     }
   | { id: string; kind: "question"; questionType: "MATCHING"; items: StoryMatchingItem[]; options: McOption[] };
@@ -314,6 +334,7 @@ export interface ExerciseSummary {
   id: string;
   languageSessionId: string;
   type: ExerciseType;
+  level: CEFRLevel;
   status: ExerciseStatus;
   createdAt: Date;
   completedAt: Date | null;

@@ -2,14 +2,14 @@
 
 import { useEffect, useState } from "react";
 import type { StoryAnswerKey, StoryPayload } from "@lt/core";
-import { IconArrowLeft, IconArrowRight, IconCheck, IconLanguage, IconSparkles, IconX } from "../Icons";
+import { IconArrowLeft, IconArrowRight, IconLanguage, IconSparkles } from "../Icons";
 import { SpeakButton } from "../SpeakButton";
 import { useSpeech } from "@/lib/hooks/useSpeech";
 import { useSoundEffects } from "@/lib/hooks/useSoundEffects";
 import { answersMatch } from "@/lib/textMatch";
+import { CheckFooter, NATIVE_SPEECH_LANG, OptionList, optionSpeechLang } from "./OptionList";
 import type { ExerciseComponentProps } from "./types";
-
-const OPTION_LETTERS = ["A", "B", "C", "D", "E", "F"];
+import { WordBank } from "./WordBank";
 
 export function StoryExercise({ exercise, onSubmit, languageCode }: ExerciseComponentProps) {
   const payload = exercise.payload as unknown as StoryPayload;
@@ -23,11 +23,13 @@ export function StoryExercise({ exercise, onSubmit, languageCode }: ExerciseComp
 
   // Per-node-type transient UI state, reset whenever we advance to a new node.
   const [selected, setSelected] = useState<string | null>(null);
+  const [selectedRevealed, setSelectedRevealed] = useState(false);
   const [textInput, setTextInput] = useState("");
   const [textRevealed, setTextRevealed] = useState(false);
   const [showTranslation, setShowTranslation] = useState(false);
   const [matchingIndex, setMatchingIndex] = useState(0);
   const [matchingSelected, setMatchingSelected] = useState<string | null>(null);
+  const [matchingRevealed, setMatchingRevealed] = useState(false);
   const [matchingPairs, setMatchingPairs] = useState<Record<string, string>>({});
 
   const node = payload.nodes[index];
@@ -48,11 +50,13 @@ export function StoryExercise({ exercise, onSubmit, languageCode }: ExerciseComp
 
   function resetPerNodeState() {
     setSelected(null);
+    setSelectedRevealed(false);
     setTextInput("");
     setTextRevealed(false);
     setShowTranslation(false);
     setMatchingIndex(0);
     setMatchingSelected(null);
+    setMatchingRevealed(false);
     setMatchingPairs({});
   }
 
@@ -165,7 +169,7 @@ export function StoryExercise({ exercise, onSubmit, languageCode }: ExerciseComp
   }
 
   if (node.questionType === "MULTIPLE_CHOICE") {
-    const revealed = selected !== null;
+    const revealed = selectedRevealed;
     const keyEntry = answerKey.answers[node.id];
     const correctOptionId = keyEntry?.questionType === "MULTIPLE_CHOICE" ? keyEntry.correctOptionId : undefined;
     const isCorrect = selected === correctOptionId;
@@ -185,74 +189,32 @@ export function StoryExercise({ exercise, onSubmit, languageCode }: ExerciseComp
             <span>💡 Hint: {node.hint}</span>
           </div>
         )}
-        <div className="options-grid">
-          {node.options.map((option, idx) => {
-            let cls = "option-btn";
-            const isThisCorrect = revealed && option.id === correctOptionId;
-            const isThisWrong = revealed && option.id === selected && !isCorrect;
-            if (revealed) {
-              if (isThisCorrect) cls += " correct";
-              else if (isThisWrong) cls += " incorrect";
-            } else if (option.id === selected) {
-              cls += " selected";
-            }
-            return (
-              <button
-                key={option.id}
-                type="button"
-                className={cls}
-                disabled={revealed}
-                onClick={() => {
-                  setSelected(option.id);
-                  if (option.id === correctOptionId) playCorrect();
-                  else playWrong();
-                }}
-              >
-                <div style={{ display: "flex", alignItems: "center", gap: "0.85rem" }}>
-                  <span
-                    style={{
-                      width: "28px",
-                      height: "28px",
-                      borderRadius: "8px",
-                      background: "rgba(255, 255, 255, 0.08)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      fontSize: "0.8rem",
-                      fontWeight: 700,
-                      fontFamily: "var(--font-mono)",
-                    }}
-                  >
-                    {OPTION_LETTERS[idx] ?? idx + 1}
-                  </span>
-                  <span style={{ fontSize: "1rem" }}>{option.text}</span>
-                </div>
-                {revealed && isThisCorrect && <IconCheck className="w-5 h-5" />}
-                {revealed && isThisWrong && <IconX className="w-5 h-5" />}
-              </button>
-            );
-          })}
-        </div>
-        {revealed && (
-          <div style={{ marginTop: "1.75rem", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "1rem" }}>
-            <span style={{ color: isCorrect ? "#34d399" : "#fda4af", fontWeight: 700 }}>
-              {isCorrect ? "✓ Correct!" : "✕ Not quite right."}
-            </span>
-            <button
-              type="button"
-              className="btn"
-              style={{ padding: "0.75rem 1.75rem" }}
-              onClick={() => {
-                const next = { ...answers, [node.id]: selected! };
-                setAnswers(next);
-                handleAdvance(next);
-              }}
-            >
-              <span>{isLast ? "Finish Story" : "Next Scene"}</span>
-              <IconArrowRight className="w-4 h-4" />
-            </button>
-          </div>
-        )}
+        <OptionList
+          options={node.options}
+          selectedId={selected}
+          correctOptionId={correctOptionId}
+          revealed={revealed}
+          speakLang={optionSpeechLang(node.optionLanguage, languageCode)}
+          onSelect={setSelected}
+        />
+        <CheckFooter
+          revealed={revealed}
+          canCheck={selected !== null}
+          isCorrect={isCorrect}
+          onCheck={() => {
+            setSelectedRevealed(true);
+            if (isCorrect) playCorrect();
+            else playWrong();
+          }}
+          onContinue={() => {
+            const next = { ...answers, [node.id]: selected! };
+            setAnswers(next);
+            handleAdvance(next);
+          }}
+          correctText="✓ Correct!"
+          wrongText="✕ Not quite right."
+          continueLabel={isLast ? "Finish Story" : "Next Scene"}
+        />
       </div>
     );
   }
@@ -262,6 +224,8 @@ export function StoryExercise({ exercise, onSubmit, languageCode }: ExerciseComp
     const accepted = keyEntry?.questionType === "TRANSLATION" || keyEntry?.questionType === "FILL_BLANK" ? keyEntry.acceptedAnswers : [];
     const isCorrect = answersMatch(textInput, accepted);
     const label = node.questionType === "TRANSLATION" ? "Translation" : "Fill in the Blank";
+    // Translations into English are typed; everything else is built from tiles when the node has them.
+    const wordBank = node.questionType === "TRANSLATION" && node.direction === "TO_NATIVE" ? undefined : node.wordBank;
 
     function handleCheck() {
       if (!textInput.trim()) return;
@@ -290,11 +254,11 @@ export function StoryExercise({ exercise, onSubmit, languageCode }: ExerciseComp
             }}
           >
             <span className="muted" style={{ fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 700 }}>
-              Translate into target language
+              {node.direction === "TO_NATIVE" ? "Translate into English" : "Translate into target language"}
             </span>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem", marginTop: "0.4rem" }}>
               <h3 style={{ fontSize: "1.6rem", fontWeight: 800, margin: 0, color: "var(--text-main)" }}>&ldquo;{node.prompt}&rdquo;</h3>
-              <SpeakButton text={node.prompt} lang={node.direction === "TO_NATIVE" ? languageCode : "en-US"} />
+              <SpeakButton text={node.prompt} lang={node.direction === "TO_NATIVE" ? languageCode : NATIVE_SPEECH_LANG} />
             </div>
           </div>
         ) : (
@@ -347,13 +311,17 @@ export function StoryExercise({ exercise, onSubmit, languageCode }: ExerciseComp
           </div>
         )}
 
-        <input
-          style={{ width: "100%", fontSize: "1rem", padding: "0.85rem 1.15rem" }}
-          value={textInput}
-          onChange={(e) => setTextInput(e.target.value)}
-          disabled={textRevealed}
-          placeholder={node.questionType === "TRANSLATION" ? "Type your translation..." : "Type the missing word..."}
-        />
+        {wordBank ? (
+          <WordBank key={node.id} tiles={wordBank} lang={languageCode} disabled={textRevealed} onChange={setTextInput} />
+        ) : (
+          <input
+            style={{ width: "100%", fontSize: "1rem", padding: "0.85rem 1.15rem" }}
+            value={textInput}
+            onChange={(e) => setTextInput(e.target.value)}
+            disabled={textRevealed}
+            placeholder={node.questionType === "TRANSLATION" ? "Type your translation..." : "Type the missing word..."}
+          />
+        )}
 
         {textRevealed && (
           <div className={`alert ${isCorrect ? "alert-success" : "alert-danger"}`} style={{ marginTop: "1rem" }}>
@@ -388,7 +356,7 @@ export function StoryExercise({ exercise, onSubmit, languageCode }: ExerciseComp
   if (!currentItem) return null;
   const keyEntry = answerKey.answers[node.id];
   const correctPairs = keyEntry?.questionType === "MATCHING" ? keyEntry.correctPairs : {};
-  const revealed = matchingSelected !== null;
+  const revealed = matchingRevealed;
   const correctOptionId = correctPairs[currentItem.id];
   const isCorrect = matchingSelected === correctOptionId;
   const isLastItemInNode = matchingIndex === node.items.length - 1;
@@ -397,6 +365,7 @@ export function StoryExercise({ exercise, onSubmit, languageCode }: ExerciseComp
     const nextPairs = { ...matchingPairs, [currentItem.id]: matchingSelected! };
     setMatchingPairs(nextPairs);
     setMatchingSelected(null);
+    setMatchingRevealed(false);
     if (isLastItemInNode) {
       const next = { ...answers, [node.id]: { pairs: nextPairs } };
       setAnswers(next);
@@ -435,65 +404,29 @@ export function StoryExercise({ exercise, onSubmit, languageCode }: ExerciseComp
           <span>💡 Hint: {currentItem.hint}</span>
         </div>
       )}
-      <div className="options-grid">
-        {node.options.map((option, idx) => {
-          let cls = "option-btn";
-          const isThisCorrect = revealed && option.id === correctOptionId;
-          const isThisWrong = revealed && option.id === matchingSelected && !isCorrect;
-          if (revealed) {
-            if (isThisCorrect) cls += " correct";
-            else if (isThisWrong) cls += " incorrect";
-          } else if (option.id === matchingSelected) {
-            cls += " selected";
-          }
-          return (
-            <button
-              key={option.id}
-              type="button"
-              className={cls}
-              disabled={revealed}
-              onClick={() => {
-                setMatchingSelected(option.id);
-                if (option.id === correctOptionId) playCorrect();
-                else playWrong();
-              }}
-            >
-              <div style={{ display: "flex", alignItems: "center", gap: "0.85rem" }}>
-                <span
-                  style={{
-                    width: "28px",
-                    height: "28px",
-                    borderRadius: "8px",
-                    background: "rgba(255, 255, 255, 0.08)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: "0.8rem",
-                    fontWeight: 700,
-                    fontFamily: "var(--font-mono)",
-                  }}
-                >
-                  {OPTION_LETTERS[idx] ?? idx + 1}
-                </span>
-                <span style={{ fontSize: "1rem" }}>{option.text}</span>
-              </div>
-              {revealed && isThisCorrect && <IconCheck className="w-5 h-5" />}
-              {revealed && isThisWrong && <IconX className="w-5 h-5" />}
-            </button>
-          );
-        })}
-      </div>
-      {revealed && (
-        <div style={{ marginTop: "1.75rem", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "1rem" }}>
-          <span style={{ color: isCorrect ? "#34d399" : "#fda4af", fontWeight: 700 }}>
-            {isCorrect ? "✓ Correct match!" : "✕ Incorrect."}
-          </span>
-          <button type="button" className="btn" style={{ padding: "0.75rem 1.75rem" }} onClick={handleContinueMatching}>
-            <span>{isLastItemInNode ? (isLast ? "Finish Story" : "Next Scene") : "Next Match"}</span>
-            <IconArrowRight className="w-4 h-4" />
-          </button>
-        </div>
-      )}
+      {/* Options are the English translations */}
+      <OptionList
+        options={node.options}
+        selectedId={matchingSelected}
+        correctOptionId={correctOptionId}
+        revealed={revealed}
+        speakLang={NATIVE_SPEECH_LANG}
+        onSelect={setMatchingSelected}
+      />
+      <CheckFooter
+        revealed={revealed}
+        canCheck={matchingSelected !== null}
+        isCorrect={isCorrect}
+        onCheck={() => {
+          setMatchingRevealed(true);
+          if (isCorrect) playCorrect();
+          else playWrong();
+        }}
+        onContinue={handleContinueMatching}
+        correctText="✓ Correct match!"
+        wrongText="✕ Incorrect."
+        continueLabel={isLastItemInNode ? (isLast ? "Finish Story" : "Next Scene") : "Next Match"}
+      />
     </div>
   );
 }

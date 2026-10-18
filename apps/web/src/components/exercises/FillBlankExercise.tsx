@@ -8,6 +8,7 @@ import { useDrillUntilCorrect } from "@/lib/hooks/useDrillUntilCorrect";
 import { useSoundEffects } from "@/lib/hooks/useSoundEffects";
 import { answersMatch } from "@/lib/textMatch";
 import type { ExerciseComponentProps } from "./types";
+import { WordBank } from "./WordBank";
 
 export function FillBlankExercise({ exercise, onSubmit, languageCode }: ExerciseComponentProps) {
   const payload = exercise.payload as unknown as FillBlankPayload;
@@ -17,6 +18,8 @@ export function FillBlankExercise({ exercise, onSubmit, languageCode }: Exercise
   const { roundItems, firstAttempt, submitAnswer, isComplete } = useDrillUntilCorrect<string>(questionIds);
   const [input, setInput] = useState("");
   const [revealed, setRevealed] = useState(false);
+  // Bumped per answered question so the word bank remounts empty, even when a missed question comes straight back.
+  const [turn, setTurn] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const { playCorrect, playWrong } = useSoundEffects();
@@ -67,6 +70,7 @@ export function FillBlankExercise({ exercise, onSubmit, languageCode }: Exercise
     submitAnswer(current.id, input, isCorrect);
     setInput("");
     setRevealed(false);
+    setTurn((t) => t + 1);
   }
 
   function handleKeyDown(e: React.KeyboardEvent) {
@@ -149,8 +153,16 @@ export function FillBlankExercise({ exercise, onSubmit, languageCode }: Exercise
         </div>
       )}
 
-      {/* Input Field */}
-      <div>
+      {/* Answer: word tiles, or a text box for exercises generated before word banks */}
+      {current.wordBank ? (
+        <WordBank
+          key={`${current.id}:${turn}`}
+          tiles={current.wordBank}
+          lang={languageCode}
+          disabled={revealed}
+          onChange={setInput}
+        />
+      ) : (
         <input
           ref={inputRef}
           style={{ width: "100%", fontSize: "1rem", padding: "0.85rem 1.15rem" }}
@@ -160,7 +172,7 @@ export function FillBlankExercise({ exercise, onSubmit, languageCode }: Exercise
           disabled={revealed}
           placeholder="Type the missing word and press Enter..."
         />
-      </div>
+      )}
 
       {/* Feedback Banner */}
       {revealed && (

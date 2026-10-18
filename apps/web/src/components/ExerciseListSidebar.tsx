@@ -122,9 +122,14 @@ export function ExerciseListSidebar({
                       </span>
                     </div>
 
-                    <span className={`pill pill-status-${exercise.status}`} style={{ fontSize: "0.7rem" }}>
-                      {STATUS_LABEL[exercise.status]}
-                    </span>
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
+                      <span className="pill pill-level" style={{ fontSize: "0.7rem" }} title="Level this exercise was generated for">
+                        {exercise.level}
+                      </span>
+                      <span className={`pill pill-status-${exercise.status}`} style={{ fontSize: "0.7rem" }}>
+                        {STATUS_LABEL[exercise.status]}
+                      </span>
+                    </div>
                   </Link>
                 );
               })}

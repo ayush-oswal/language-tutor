@@ -1,3 +1,4 @@
+import { normalizeAnswerText, stripDiacritics } from "../scoring/normalization.js";
 import type { ValidationResult } from "../types.js";
 import type { NewWordExerciseSubmission } from "./schemas/newWordExercise.schema.js";
 import type { RevisionExerciseSubmission } from "./schemas/revisionExercise.schema.js";
@@ -10,6 +11,48 @@ function ok(): ValidationResult {
 
 function fail(errors: string[]): ValidationResult {
   return { valid: false, errors };
+}
+
+const MIN_WORD_BANK_DISTRACTORS = 2;
+
+/** A word-bank answer is the tapped tiles joined by spaces and scored with answersMatch, so compare at that level. */
+function bankTokens(text: string): string[] {
+  return stripDiacritics(normalizeAnswerText(text)).split(" ").filter(Boolean);
+}
+
+/** Checks that some accepted answer can be built from the tiles, with enough distractors left over. */
+function validateWordBank(label: string, wordBank: string[], acceptedAnswers: string[]): string[] {
+  const errors: string[] = [];
+  const available = new Map<string, number>();
+  let tileTokenCount = 0;
+  for (const tile of wordBank) {
+    const tokens = bankTokens(tile);
+    if (tokens.length === 0) errors.push(`${label}: word bank tile "${tile}" has no letters or digits`);
+    for (const token of tokens) {
+      available.set(token, (available.get(token) ?? 0) + 1);
+      tileTokenCount++;
+    }
+  }
+
+  const buildable = acceptedAnswers.map(bankTokens).filter((tokens) => {
+    if (tokens.length === 0) return false;
+    const remaining = new Map(available);
+    return tokens.every((token) => {
+      const left = remaining.get(token) ?? 0;
+      remaining.set(token, left - 1);
+      return left > 0;
+    });
+  });
+  if (buildable.length === 0) {
+    errors.push(
+      `${label}: no accepted answer can be built from the word bank — include one tile per word of the answer`,
+    );
+  } else if (tileTokenCount - Math.max(...buildable.map((t) => t.length)) < MIN_WORD_BANK_DISTRACTORS) {
+    errors.push(
+      `${label}: the word bank needs at least ${MIN_WORD_BANK_DISTRACTORS} distractor tiles besides the answer's words`,
+    );
+  }
+  return errors;
 }
 
 export function collectNewWordIds(submission: NewWordExerciseSubmission): string[] {
@@ -107,12 +150,19 @@ export function validateRevisionExerciseIntegrity(
       if (answer === undefined) errors.push(`question "${q.id}" has no entry in answerKey.answers`);
       else if (!optionIds.has(answer)) errors.push(`answerKey.answers["${q.id}"] is not one of that question's options`);
     }
-  } else {
-    // TRANSLATION / FILL_BLANK
+  } else if (submission.type === "TRANSLATION") {
     for (const q of submission.payload.questions) {
-      if (!(q.id in submission.answerKey.answers)) {
-        errors.push(`question "${q.id}" has no entry in answerKey.answers`);
-      }
+      const accepted = submission.answerKey.answers[q.id];
+      if (accepted === undefined) errors.push(`question "${q.id}" has no entry in answerKey.answers`);
+      if (q.direction !== "TO_TARGET") continue;
+      if (!q.wordBank) errors.push(`question "${q.id}" translates into the target language, so it needs a wordBank`);
+      else if (accepted) errors.push(...validateWordBank(`question "${q.id}"`, q.wordBank, accepted));
+    }
+  } else {
+    for (const q of submission.payload.questions) {
+      const accepted = submission.answerKey.answers[q.id];
+      if (accepted === undefined) errors.push(`question "${q.id}" has no entry in answerKey.answers`);
+      else errors.push(...validateWordBank(`question "${q.id}"`, q.wordBank, accepted));
     }
   }
 
@@ -167,6 +217,13 @@ export function validateStoryExerciseIntegrity(
       if (!optionIds.has(keyEntry.correctOptionId)) {
         errors.push(`answerKey for node "${node.id}" references an option not in that node's own options`);
       }
+    }
+    if (node.questionType === "TRANSLATION" && keyEntry.questionType === "TRANSLATION" && node.direction === "TO_TARGET") {
+      if (!node.wordBank) errors.push(`node "${node.id}" translates into the target language, so it needs a wordBank`);
+      else errors.push(...validateWordBank(`node "${node.id}"`, node.wordBank, keyEntry.acceptedAnswers));
+    }
+    if (node.questionType === "FILL_BLANK" && keyEntry.questionType === "FILL_BLANK") {
+      errors.push(...validateWordBank(`node "${node.id}"`, node.wordBank, keyEntry.acceptedAnswers));
     }
     if (node.questionType === "MATCHING" && keyEntry.questionType === "MATCHING") {
       const itemIds = new Set(node.items.map((i) => i.id));

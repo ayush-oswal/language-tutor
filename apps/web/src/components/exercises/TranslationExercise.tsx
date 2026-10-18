@@ -7,7 +7,9 @@ import { SpeakButton } from "../SpeakButton";
 import { useDrillUntilCorrect } from "@/lib/hooks/useDrillUntilCorrect";
 import { useSoundEffects } from "@/lib/hooks/useSoundEffects";
 import { answersMatch } from "@/lib/textMatch";
+import { NATIVE_SPEECH_LANG } from "./OptionList";
 import type { ExerciseComponentProps } from "./types";
+import { WordBank } from "./WordBank";
 
 export function TranslationExercise({ exercise, onSubmit, languageCode }: ExerciseComponentProps) {
   const payload = exercise.payload as unknown as TranslationPayload;
@@ -17,6 +19,8 @@ export function TranslationExercise({ exercise, onSubmit, languageCode }: Exerci
   const { roundItems, firstAttempt, submitAnswer, isComplete } = useDrillUntilCorrect<string>(questionIds);
   const [input, setInput] = useState("");
   const [revealed, setRevealed] = useState(false);
+  // Bumped per answered question so the word bank remounts empty, even when a missed question comes straight back.
+  const [turn, setTurn] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const { playCorrect, playWrong } = useSoundEffects();
@@ -54,6 +58,8 @@ export function TranslationExercise({ exercise, onSubmit, languageCode }: Exerci
     );
   }
   if (!current) return null;
+  // Translations into English are typed; into the target language they are built from tiles.
+  const wordBank = current.direction === "TO_TARGET" ? current.wordBank : undefined;
 
   function handleCheck() {
     if (!input.trim()) return;
@@ -67,6 +73,7 @@ export function TranslationExercise({ exercise, onSubmit, languageCode }: Exerci
     submitAnswer(current.id, input, isCorrect);
     setInput("");
     setRevealed(false);
+    setTurn((t) => t + 1);
   }
 
   function handleKeyDown(e: React.KeyboardEvent) {
@@ -108,13 +115,13 @@ export function TranslationExercise({ exercise, onSubmit, languageCode }: Exerci
         }}
       >
         <span className="muted" style={{ fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 700 }}>
-          Translate into target language
+          {current.direction === "TO_NATIVE" ? "Translate into English" : "Translate into target language"}
         </span>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem", marginTop: "0.4rem" }}>
           <h3 style={{ fontSize: "1.6rem", fontWeight: 800, margin: 0, color: "var(--text-main)" }}>
             &ldquo;{current.prompt}&rdquo;
           </h3>
-          <SpeakButton text={current.prompt} lang={current.direction === "TO_NATIVE" ? languageCode : "en-US"} />
+          <SpeakButton text={current.prompt} lang={current.direction === "TO_NATIVE" ? languageCode : NATIVE_SPEECH_LANG} />
         </div>
       </div>
 
@@ -124,8 +131,16 @@ export function TranslationExercise({ exercise, onSubmit, languageCode }: Exerci
         </div>
       )}
 
-      {/* Translation Input */}
-      <div>
+      {/* Answer: word tiles, or a text box */}
+      {wordBank ? (
+        <WordBank
+          key={`${current.id}:${turn}`}
+          tiles={wordBank}
+          lang={languageCode}
+          disabled={revealed}
+          onChange={setInput}
+        />
+      ) : (
         <input
           ref={inputRef}
           style={{ width: "100%", fontSize: "1rem", padding: "0.85rem 1.15rem" }}
@@ -133,9 +148,13 @@ export function TranslationExercise({ exercise, onSubmit, languageCode }: Exerci
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
           disabled={revealed}
-          placeholder="Type your translation in target language and press Enter..."
+          placeholder={
+            current.direction === "TO_NATIVE"
+              ? "Type your translation in English and press Enter..."
+              : "Type your translation in target language and press Enter..."
+          }
         />
-      </div>
+      )}
 
       {/* Feedback Alert */}
       {revealed && (

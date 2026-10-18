@@ -8,7 +8,7 @@ export function normalizeAnswerText(raw: string): string {
     .trim();
 }
 
-function stripDiacritics(raw: string): string {
+export function stripDiacritics(raw: string): string {
   return raw.normalize("NFD").replace(/[̀-ͯ]/g, "");
 }
 

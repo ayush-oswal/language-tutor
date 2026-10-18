@@ -2,25 +2,16 @@
 
 import { useEffect, useState } from "react";
 import type { NewWordLearningAnswerKey, NewWordLearningPayload } from "@lt/core";
-import { IconArrowRight, IconBook, IconBrain, IconCheck, IconSparkles, IconX } from "../Icons";
+import { IconArrowRight, IconSparkles } from "../Icons";
 import { SpeakButton } from "../SpeakButton";
 import { useDrillUntilCorrect } from "@/lib/hooks/useDrillUntilCorrect";
 import { useSoundEffects } from "@/lib/hooks/useSoundEffects";
+import { shuffle } from "@/lib/shuffle";
+import { CheckFooter, NATIVE_SPEECH_LANG, OptionList } from "./OptionList";
 import type { ExerciseComponentProps } from "./types";
 
 type Stage = "present" | "stage2" | "stage3";
-const OPTION_LETTERS = ["A", "B", "C", "D", "E", "F"];
 const BLANK = /_{3,}/;
-
-/** Fisher–Yates; the generator's option order often mirrors the question order, so it is never trusted. */
-function shuffle<T>(items: T[]): T[] {
-  const out = [...items];
-  for (let i = out.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [out[i], out[j]] = [out[j], out[i]];
-  }
-  return out;
-}
 
 function fillBlank(sentence: string, answer: string): string {
   return sentence.replace(BLANK, answer);
@@ -47,7 +38,8 @@ export function NewWordLearningExercise({ exercise, onSubmit, languageCode }: Ex
   const answerKey = exercise.answerKey as unknown as NewWordLearningAnswerKey;
 
   const [stage, setStage] = useState<Stage>("present");
-  // Shuffled once per mount so the order stays put while the learner works through the drill.
+  // The generator's option order often mirrors the question order, so it is never trusted. Shuffled once per
+  // mount so the order stays put while the learner works through the drill.
   const [stage2Options] = useState(() => shuffle(payload.stage2.options));
   const [stage3Options] = useState(
     () => new Map(payload.stage3.questions.map((q) => [q.id, shuffle(q.options)])),
@@ -62,6 +54,8 @@ export function NewWordLearningExercise({ exercise, onSubmit, languageCode }: Ex
 
   const [stage2Selected, setStage2Selected] = useState<string | null>(null);
   const [stage3Selected, setStage3Selected] = useState<string | null>(null);
+  const [stage2Revealed, setStage2Revealed] = useState(false);
+  const [stage3Revealed, setStage3Revealed] = useState(false);
   const { playCorrect, playWrong } = useSoundEffects();
 
   useEffect(() => {
@@ -156,7 +150,7 @@ export function NewWordLearningExercise({ exercise, onSubmit, languageCode }: Ex
     const currentId = stage2Drill.roundItems[0];
     const current = payload.stage2.items.find((i) => i.id === currentId);
     if (!current) return null;
-    const revealed = stage2Selected !== null;
+    const revealed = stage2Revealed;
     const correctOptionId = answerKey.stage2CorrectPairs[current.id];
     const isCorrect = stage2Selected === correctOptionId;
     const currentIndex = stage2ItemIds.length - stage2Drill.roundItems.length + 1;
@@ -205,78 +199,33 @@ export function NewWordLearningExercise({ exercise, onSubmit, languageCode }: Ex
           </div>
         )}
 
-        <div className="options-grid">
-          {stage2Options.map((option, idx) => {
-            let cls = "option-btn";
-            const isThisCorrect = revealed && option.id === correctOptionId;
-            const isThisWrong = revealed && option.id === stage2Selected && !isCorrect;
+        {/* Options are the English translations */}
+        <OptionList
+          options={stage2Options}
+          selectedId={stage2Selected}
+          correctOptionId={correctOptionId}
+          revealed={revealed}
+          speakLang={NATIVE_SPEECH_LANG}
+          onSelect={setStage2Selected}
+        />
 
-            if (revealed) {
-              if (isThisCorrect) cls += " correct";
-              else if (isThisWrong) cls += " incorrect";
-            } else if (option.id === stage2Selected) {
-              cls += " selected";
-            }
-
-            return (
-              <button
-                key={option.id}
-                type="button"
-                className={cls}
-                disabled={revealed}
-                onClick={() => {
-                  if (revealed) return;
-                  setStage2Selected(option.id);
-                  if (option.id === correctOptionId) playCorrect();
-                  else playWrong();
-                }}
-              >
-                <div style={{ display: "flex", alignItems: "center", gap: "0.85rem" }}>
-                  <span
-                    style={{
-                      width: "28px",
-                      height: "28px",
-                      borderRadius: "8px",
-                      background: "rgba(255, 255, 255, 0.08)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      fontSize: "0.8rem",
-                      fontWeight: 700,
-                      fontFamily: "var(--font-mono)",
-                    }}
-                  >
-                    {OPTION_LETTERS[idx] ?? idx + 1}
-                  </span>
-                  <span style={{ fontSize: "1rem" }}>{option.text}</span>
-                </div>
-
-                {revealed && isThisCorrect && <IconCheck className="w-5 h-5" />}
-                {revealed && isThisWrong && <IconX className="w-5 h-5" />}
-              </button>
-            );
-          })}
-        </div>
-
-        {revealed && (
-          <div style={{ marginTop: "1.5rem", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "1rem" }}>
-            <span style={{ color: isCorrect ? "#34d399" : "#fda4af", fontWeight: 700 }}>
-              {isCorrect ? "✓ Correct match!" : "✕ Incorrect."}
-            </span>
-            <button
-              type="button"
-              className="btn"
-              style={{ padding: "0.7rem 1.5rem" }}
-              onClick={() => {
-                stage2Drill.submitAnswer(current.id, stage2Selected!, stage2Selected === correctOptionId);
-                setStage2Selected(null);
-              }}
-            >
-              <span>Continue</span>
-              <IconArrowRight className="w-4 h-4" />
-            </button>
-          </div>
-        )}
+        <CheckFooter
+          revealed={revealed}
+          canCheck={stage2Selected !== null}
+          isCorrect={isCorrect}
+          onCheck={() => {
+            setStage2Revealed(true);
+            if (isCorrect) playCorrect();
+            else playWrong();
+          }}
+          onContinue={() => {
+            stage2Drill.submitAnswer(current.id, stage2Selected!, isCorrect);
+            setStage2Selected(null);
+            setStage2Revealed(false);
+          }}
+          correctText="✓ Correct match!"
+          wrongText="✕ Incorrect."
+        />
       </div>
     );
   }
@@ -285,7 +234,7 @@ export function NewWordLearningExercise({ exercise, onSubmit, languageCode }: Ex
   const currentId = stage3Drill.roundItems[0];
   const current = payload.stage3.questions.find((q) => q.id === currentId);
   if (!current) return null;
-  const revealed = stage3Selected !== null;
+  const revealed = stage3Revealed;
   const correctOptionId = answerKey.stage3Answers[current.id];
   const correctOptionText = current.options.find((o) => o.id === correctOptionId)?.text ?? "";
   const isCorrect = stage3Selected === correctOptionId;
@@ -338,78 +287,32 @@ export function NewWordLearningExercise({ exercise, onSubmit, languageCode }: Ex
         </div>
       )}
 
-      <div className="options-grid">
-        {(stage3Options.get(current.id) ?? current.options).map((option, idx) => {
-          let cls = "option-btn";
-          const isThisCorrect = revealed && option.id === correctOptionId;
-          const isThisWrong = revealed && option.id === stage3Selected && !isCorrect;
+      <OptionList
+        options={stage3Options.get(current.id) ?? current.options}
+        selectedId={stage3Selected}
+        correctOptionId={correctOptionId}
+        revealed={revealed}
+        speakLang={languageCode}
+        onSelect={setStage3Selected}
+      />
 
-          if (revealed) {
-            if (isThisCorrect) cls += " correct";
-            else if (isThisWrong) cls += " incorrect";
-          } else if (option.id === stage3Selected) {
-            cls += " selected";
-          }
-
-          return (
-            <button
-              key={option.id}
-              type="button"
-              className={cls}
-              disabled={revealed}
-              onClick={() => {
-                if (revealed) return;
-                setStage3Selected(option.id);
-                if (option.id === correctOptionId) playCorrect();
-                else playWrong();
-              }}
-            >
-              <div style={{ display: "flex", alignItems: "center", gap: "0.85rem" }}>
-                <span
-                  style={{
-                    width: "28px",
-                    height: "28px",
-                    borderRadius: "8px",
-                    background: "rgba(255, 255, 255, 0.08)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: "0.8rem",
-                    fontWeight: 700,
-                    fontFamily: "var(--font-mono)",
-                  }}
-                >
-                  {OPTION_LETTERS[idx] ?? idx + 1}
-                </span>
-                <span style={{ fontSize: "1rem" }}>{option.text}</span>
-              </div>
-
-              {revealed && isThisCorrect && <IconCheck className="w-5 h-5" />}
-              {revealed && isThisWrong && <IconX className="w-5 h-5" />}
-            </button>
-          );
-        })}
-      </div>
-
-      {revealed && (
-        <div style={{ marginTop: "1.5rem", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "1rem" }}>
-          <span style={{ color: isCorrect ? "#34d399" : "#fda4af", fontWeight: 700 }}>
-            {isCorrect ? "✓ Excellent recall!" : "✕ Incorrect."}
-          </span>
-          <button
-            type="button"
-            className="btn"
-            style={{ padding: "0.7rem 1.5rem" }}
-            onClick={() => {
-              stage3Drill.submitAnswer(current.id, stage3Selected!, stage3Selected === correctOptionId);
-              setStage3Selected(null);
-            }}
-          >
-            <span>Continue</span>
-            <IconArrowRight className="w-4 h-4" />
-          </button>
-        </div>
-      )}
+      <CheckFooter
+        revealed={revealed}
+        canCheck={stage3Selected !== null}
+        isCorrect={isCorrect}
+        onCheck={() => {
+          setStage3Revealed(true);
+          if (isCorrect) playCorrect();
+          else playWrong();
+        }}
+        onContinue={() => {
+          stage3Drill.submitAnswer(current.id, stage3Selected!, isCorrect);
+          setStage3Selected(null);
+          setStage3Revealed(false);
+        }}
+        correctText="✓ Excellent recall!"
+        wrongText="✕ Incorrect."
+      />
     </div>
   );
 }

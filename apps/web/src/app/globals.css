@@ -588,6 +588,56 @@ button:disabled,
   box-shadow: 0 0 16px rgba(244, 63, 94, 0.25);
 }
 
+/* Word bank: tap tiles to build an answer */
+.word-bank-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 3.4rem;
+  padding: 0.5rem 0.25rem;
+  border-bottom: 2px solid var(--border-subtle);
+  margin-bottom: 1.25rem;
+}
+
+.word-bank-tiles {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.word-tile {
+  padding: 0.55rem 0.95rem;
+  background: rgba(255, 255, 255, 0.05);
+  background-image: none;
+  border: 1px solid var(--border-subtle);
+  border-bottom-width: 3px;
+  border-radius: var(--radius-md);
+  color: var(--text-main);
+  font-size: 1rem;
+  font-weight: 600;
+  box-shadow: none;
+}
+
+.word-tile:hover:not(:disabled) {
+  border-color: rgba(99, 102, 241, 0.5);
+  box-shadow: none;
+}
+
+.word-tile:disabled {
+  cursor: default;
+}
+
+.word-tile-placeholder {
+  display: inline-flex;
+  color: transparent;
+  background: rgba(255, 255, 255, 0.02);
+  border-style: dashed;
+  border-bottom-width: 1px;
+  user-select: none;
+}
+
 /* Tables */
 .table-wrapper {
   width: 100%;

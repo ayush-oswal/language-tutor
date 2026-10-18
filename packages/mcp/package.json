@@ -1,6 +1,6 @@
 {
   "name": "language-tutor-mcp",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "MCP server for Language Tutor MCP — an AI-driven language learning app with spaced-repetition vocabulary drills, stories, and exercises.",
   "license": "MIT",
   "type": "module",

@@ -6,13 +6,12 @@ import type {
   MultipleChoicePayload,
   MultipleChoiceQuestion,
 } from "@lt/core";
-import { IconArrowRight, IconCheck, IconSparkles, IconX } from "../Icons";
+import { IconSparkles } from "../Icons";
 import { SpeakButton } from "../SpeakButton";
 import { useDrillUntilCorrect } from "@/lib/hooks/useDrillUntilCorrect";
 import { useSoundEffects } from "@/lib/hooks/useSoundEffects";
+import { CheckFooter, OptionList, optionSpeechLang } from "./OptionList";
 import type { ExerciseComponentProps } from "./types";
-
-const OPTION_LETTERS = ["A", "B", "C", "D", "E", "F"];
 
 export function MultipleChoiceExercise({ exercise, onSubmit, languageCode }: ExerciseComponentProps) {
   const payload = exercise.payload as unknown as MultipleChoicePayload;
@@ -21,6 +20,7 @@ export function MultipleChoiceExercise({ exercise, onSubmit, languageCode }: Exe
 
   const { roundItems, firstAttempt, submitAnswer, isComplete } = useDrillUntilCorrect<string>(questionIds);
   const [selected, setSelected] = useState<string | null>(null);
+  const [revealed, setRevealed] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const { playCorrect, playWrong } = useSoundEffects();
 
@@ -48,23 +48,23 @@ export function MultipleChoiceExercise({ exercise, onSubmit, languageCode }: Exe
   }
   if (!current) return null;
 
-  const revealed = selected !== null;
   const correctOptionId = answerKey.answers[current.id];
   const isCorrect = selected === correctOptionId;
   const currentIndex = questionIds.length - roundItems.length + 1;
   const progressPct = Math.round((currentIndex / questionIds.length) * 100);
 
-  function handleSelect(optionId: string) {
-    if (revealed) return;
-    setSelected(optionId);
-    if (optionId === correctOptionId) playCorrect();
+  function handleCheck() {
+    if (!selected) return;
+    setRevealed(true);
+    if (isCorrect) playCorrect();
     else playWrong();
   }
 
   function handleContinue() {
     if (!selected || !current) return;
-    submitAnswer(current.id, selected, selected === correctOptionId);
+    submitAnswer(current.id, selected, isCorrect);
     setSelected(null);
+    setRevealed(false);
   }
 
   return (
@@ -97,76 +97,24 @@ export function MultipleChoiceExercise({ exercise, onSubmit, languageCode }: Exe
         </div>
       )}
 
-      {/* Options List */}
-      <div className="options-grid" style={{ marginTop: "1.5rem" }}>
-        {current.options.map((option, idx) => {
-          let cls = "option-btn";
-          const isThisCorrect = revealed && option.id === correctOptionId;
-          const isThisWrong = revealed && option.id === selected && !isCorrect;
+      <OptionList
+        options={current.options}
+        selectedId={selected}
+        correctOptionId={correctOptionId}
+        revealed={revealed}
+        speakLang={optionSpeechLang(current.optionLanguage, languageCode)}
+        onSelect={setSelected}
+      />
 
-          if (revealed) {
-            if (isThisCorrect) cls += " correct";
-            else if (isThisWrong) cls += " incorrect";
-          } else if (option.id === selected) {
-            cls += " selected";
-          }
-
-          return (
-            <button
-              key={option.id}
-              type="button"
-              className={cls}
-              disabled={revealed}
-              onClick={() => handleSelect(option.id)}
-            >
-              <div style={{ display: "flex", alignItems: "center", gap: "0.85rem" }}>
-                <span
-                  style={{
-                    width: "28px",
-                    height: "28px",
-                    borderRadius: "8px",
-                    background: "rgba(255, 255, 255, 0.08)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: "0.8rem",
-                    fontWeight: 700,
-                    fontFamily: "var(--font-mono)",
-                  }}
-                >
-                  {OPTION_LETTERS[idx] ?? idx + 1}
-                </span>
-                <span style={{ fontSize: "1rem" }}>{option.text}</span>
-              </div>
-
-              {revealed && isThisCorrect && <IconCheck className="w-5 h-5" />}
-              {revealed && isThisWrong && <IconX className="w-5 h-5" />}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Feedback Banner & Continue Button */}
-      {revealed && (
-        <div style={{ marginTop: "1.5rem", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "1rem" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-            {isCorrect ? (
-              <span style={{ color: "#34d399", fontWeight: 700, fontSize: "1rem" }}>
-                ✓ Brilliant! Correct answer.
-              </span>
-            ) : (
-              <span style={{ color: "#fda4af", fontWeight: 600, fontSize: "0.95rem" }}>
-                ✕ Not quite. Review the highlighted answer above.
-              </span>
-            )}
-          </div>
-
-          <button type="button" onClick={handleContinue} className="btn" style={{ padding: "0.7rem 1.5rem" }}>
-            <span>Continue</span>
-            <IconArrowRight className="w-4 h-4" />
-          </button>
-        </div>
-      )}
+      <CheckFooter
+        revealed={revealed}
+        canCheck={selected !== null}
+        isCorrect={isCorrect}
+        onCheck={handleCheck}
+        onContinue={handleContinue}
+        correctText="✓ Brilliant! Correct answer."
+        wrongText="✕ Not quite. Review the highlighted answer above."
+      />
     </div>
   );
 }

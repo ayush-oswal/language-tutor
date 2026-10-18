@@ -6,7 +6,18 @@ It talks to a hosted Language Tutor backend over HTTP. Vocabulary comes from a c
 
 ## Setup
 
-Add it to your MCP client's config (e.g. `claude_desktop_config.json`):
+You need [Node.js](https://nodejs.org) 18 or newer installed.
+
+### Claude Desktop
+
+1. Open Claude Desktop and go to **Settings → Developer → Edit Config**. This opens the folder containing `claude_desktop_config.json`.
+2. Open `claude_desktop_config.json` in a text editor.
+3. If the file is empty, paste in the block below. If it already has an `"mcpServers"` section, add just the `"language-tutor"` entry inside it, with a comma between it and the entry before it.
+4. Save the file.
+5. Quit Claude Desktop completely. Closing the window isn't enough: on Windows, right-click the Claude icon in the system tray and choose **Quit**; on macOS, press ⌘Q. Then open it again.
+6. Language Tutor should now be listed under Claude's tools (the tools / connectors menu in the chat box).
+
+### Config
 
 ```json
 {

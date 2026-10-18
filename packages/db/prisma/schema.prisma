@@ -150,6 +150,8 @@ model Exercise {
   id                String         @id @default(cuid())
   languageSessionId String
   type              ExerciseType
+  /// The session's CEFR level when the exercise was generated.
+  level             CEFRLevel
   status            ExerciseStatus @default(NEW)
   payload           Json
   answerKey         Json

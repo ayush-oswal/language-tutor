@@ -2,13 +2,12 @@
 
 import { useEffect, useState } from "react";
 import type { MatchingAnswerKey, MatchingItem, MatchingPayload } from "@lt/core";
-import { IconArrowRight, IconCheck, IconSparkles, IconX } from "../Icons";
+import { IconSparkles } from "../Icons";
 import { SpeakButton } from "../SpeakButton";
 import { useDrillUntilCorrect } from "@/lib/hooks/useDrillUntilCorrect";
 import { useSoundEffects } from "@/lib/hooks/useSoundEffects";
+import { CheckFooter, NATIVE_SPEECH_LANG, OptionList } from "./OptionList";
 import type { ExerciseComponentProps } from "./types";
-
-const OPTION_LETTERS = ["A", "B", "C", "D", "E", "F"];
 
 export function MatchingExercise({ exercise, onSubmit, languageCode }: ExerciseComponentProps) {
   const payload = exercise.payload as unknown as MatchingPayload;
@@ -17,6 +16,7 @@ export function MatchingExercise({ exercise, onSubmit, languageCode }: ExerciseC
 
   const { roundItems, firstAttempt, submitAnswer, isComplete } = useDrillUntilCorrect<string>(itemIds);
   const [selected, setSelected] = useState<string | null>(null);
+  const [revealed, setRevealed] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const { playCorrect, playWrong } = useSoundEffects();
 
@@ -44,23 +44,23 @@ export function MatchingExercise({ exercise, onSubmit, languageCode }: ExerciseC
   }
   if (!current) return null;
 
-  const revealed = selected !== null;
   const correctOptionId = answerKey.correctPairs[current.id];
   const isCorrect = selected === correctOptionId;
   const currentIndex = itemIds.length - roundItems.length + 1;
   const progressPct = Math.round((currentIndex / itemIds.length) * 100);
 
-  function handleSelect(optionId: string) {
-    if (revealed) return;
-    setSelected(optionId);
-    if (optionId === correctOptionId) playCorrect();
+  function handleCheck() {
+    if (!selected) return;
+    setRevealed(true);
+    if (isCorrect) playCorrect();
     else playWrong();
   }
 
   function handleContinue() {
     if (!selected || !current) return;
-    submitAnswer(current.id, selected, selected === correctOptionId);
+    submitAnswer(current.id, selected, isCorrect);
     setSelected(null);
+    setRevealed(false);
   }
 
   return (
@@ -107,76 +107,25 @@ export function MatchingExercise({ exercise, onSubmit, languageCode }: ExerciseC
         </div>
       )}
 
-      {/* Options */}
-      <div className="options-grid">
-        {payload.options.map((option, idx) => {
-          let cls = "option-btn";
-          const isThisCorrect = revealed && option.id === correctOptionId;
-          const isThisWrong = revealed && option.id === selected && !isCorrect;
+      {/* Options: the right column holds English translations */}
+      <OptionList
+        options={payload.options}
+        selectedId={selected}
+        correctOptionId={correctOptionId}
+        revealed={revealed}
+        speakLang={NATIVE_SPEECH_LANG}
+        onSelect={setSelected}
+      />
 
-          if (revealed) {
-            if (isThisCorrect) cls += " correct";
-            else if (isThisWrong) cls += " incorrect";
-          } else if (option.id === selected) {
-            cls += " selected";
-          }
-
-          return (
-            <button
-              key={option.id}
-              type="button"
-              className={cls}
-              disabled={revealed}
-              onClick={() => handleSelect(option.id)}
-            >
-              <div style={{ display: "flex", alignItems: "center", gap: "0.85rem" }}>
-                <span
-                  style={{
-                    width: "28px",
-                    height: "28px",
-                    borderRadius: "8px",
-                    background: "rgba(255, 255, 255, 0.08)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: "0.8rem",
-                    fontWeight: 700,
-                    fontFamily: "var(--font-mono)",
-                  }}
-                >
-                  {OPTION_LETTERS[idx] ?? idx + 1}
-                </span>
-                <span style={{ fontSize: "1rem" }}>{option.text}</span>
-              </div>
-
-              {revealed && isThisCorrect && <IconCheck className="w-5 h-5" />}
-              {revealed && isThisWrong && <IconX className="w-5 h-5" />}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Action Footer */}
-      {revealed && (
-        <div style={{ marginTop: "1.5rem", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "1rem" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-            {isCorrect ? (
-              <span style={{ color: "#34d399", fontWeight: 700, fontSize: "1rem" }}>
-                ✓ Perfect match!
-              </span>
-            ) : (
-              <span style={{ color: "#fda4af", fontWeight: 600, fontSize: "0.95rem" }}>
-                ✕ Incorrect. Keep going!
-              </span>
-            )}
-          </div>
-
-          <button type="button" onClick={handleContinue} className="btn" style={{ padding: "0.7rem 1.5rem" }}>
-            <span>Continue</span>
-            <IconArrowRight className="w-4 h-4" />
-          </button>
-        </div>
-      )}
+      <CheckFooter
+        revealed={revealed}
+        canCheck={selected !== null}
+        isCorrect={isCorrect}
+        onCheck={handleCheck}
+        onContinue={handleContinue}
+        correctText="✓ Perfect match!"
+        wrongText="✕ Incorrect. Keep going!"
+      />
     </div>
   );
 }

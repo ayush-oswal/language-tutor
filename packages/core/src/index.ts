@@ -19,3 +19,4 @@ export * from "./generation/schemas/storyExercise.schema.js";
 export * from "./generation/schemas/exercise.schema.js";
 export * from "./generation/schemas/shared.js";
 export * from "./generation/validators.js";
+export * from "./generation/prompts.js";

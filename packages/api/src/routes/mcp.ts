@@ -11,6 +11,7 @@ import {
   listSessions,
   listTagsForLevel,
   listWords,
+  NATURAL_SENTENCE_RULES,
   NEW_WORD_LEARNING_DEFAULT_COUNT,
   pickNewWords,
   requireUser,
@@ -43,6 +44,10 @@ const PRACTICE_EXERCISE_TYPES = {
 const NO_KNOWN_WORDS_MESSAGE =
   "User does not know any words yet. Call requestNewWords to teach the user new words (a new-word lesson) " +
   "before generating any practice exercise.";
+
+const WORD_BANK_REMINDER =
+  " Translations into the target language (TO_TARGET) and fill-in-the-blank questions are answered by tapping " +
+  "word tiles: give each a `wordBank` with one tile per word of the answer plus 3-5 plausible distractors.";
 
 function throwValidation(errors: string[]): never {
   throw new ValidationError(`Validation failed:\n- ${errors.join("\n- ")}`, errors);
@@ -185,6 +190,7 @@ mcpRouter.post(
     const exercise = await createExerciseFromSubmission(
       session.id,
       "NEW_WORD_LEARNING",
+      session.currentLevel,
       payload,
       { schemaVersion: 1, ...submission.answerKey },
       submission.generationContext,
@@ -222,14 +228,17 @@ mcpRouter.get(
         words.length === 0
           ? NO_KNOWN_WORDS_MESSAGE
           : type === "STORY"
-            ? `Write a short story${topic ? ` about "${topic}"` : ""} in ${session.language.name} at ` +
-              `${session.currentLevel} level, weaving in as many of these words as fit naturally, with 3-6 ` +
-              `embedded questions (mixing MULTIPLE_CHOICE, FILL_BLANK, TRANSLATION and MATCHING) that test words ` +
-              `from near the top of the list. Reference only wordIds from this list, then call submitExercise ` +
-              `with type "STORY".`
-            : `Build a ${type} exercise testing 6-10 of these words, taken from the top of the list (the list is ` +
-              `ordered by how much each word needs practice). Reference only wordIds from this list, then call ` +
-              `submitExercise with type "${type}".`,
+            ? `Write a short, coherent story${topic ? ` about "${topic}"` : ""} in ${session.language.name} at ` +
+              `${session.currentLevel} level: a realistic everyday scene with natural dialogue, where events ` +
+              `follow logically. Use these words only where they fit naturally, with 3-6 embedded questions ` +
+              `(mixing MULTIPLE_CHOICE, FILL_BLANK, TRANSLATION and MATCHING) that test words from near the top of ` +
+              `the list. Reference only wordIds from this list, then call submitExercise with type "STORY".` +
+              `${WORD_BANK_REMINDER}\n\n${NATURAL_SENTENCE_RULES}`
+            : `Build a ${type} exercise of 6-10 questions, each testing one word taken from near the top of the ` +
+              `list (the list is ordered by how much each word needs practice). Reference only wordIds from this ` +
+              `list, then call submitExercise with type "${type}".` +
+              (type === "TRANSLATION" || type === "FILL_BLANK" ? WORD_BANK_REMINDER : "") +
+              `\n\n${NATURAL_SENTENCE_RULES}`,
     });
   }),
 );
@@ -248,6 +257,7 @@ mcpRouter.post(
     const exercise = await createExerciseFromSubmission(
       session.id,
       submission.type,
+      session.currentLevel,
       { schemaVersion: 1, ...submission.payload },
       { schemaVersion: 1, ...submission.answerKey },
       submission.generationContext,
