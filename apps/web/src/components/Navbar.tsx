@@ -1,6 +1,6 @@
 import { Show, SignInButton, SignUpButton, UserButton } from "@clerk/nextjs";
+import Image from "next/image";
 import Link from "next/link";
-import { IconSparkles } from "./Icons";
 
 export function Navbar() {
   return (
@@ -8,7 +8,7 @@ export function Navbar() {
       <div className="navbar-inner">
         <Link href="/" className="navbar-brand">
           <div className="navbar-logo-icon">
-            <IconSparkles className="w-5 h-5" />
+            <Image src="/logo.png" alt="Language Tutor MCP logo" width={34} height={34} style={{ objectFit: "cover", borderRadius: "10px" }} />
           </div>
           <span>Language Tutor MCP</span>
         </Link>

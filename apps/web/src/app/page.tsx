@@ -2,6 +2,7 @@
 
 import { Show, SignInButton, SignUpButton } from "@clerk/nextjs";
 import { EnrollCard } from "@/components/EnrollCard";
+import { McpConnectGuide } from "@/components/McpConnectGuide";
 import { SessionCard } from "@/components/SessionCard";
 import { UserIdCard } from "@/components/UserIdCard";
 import { IconBook, IconBrain, IconFire, IconLanguage, IconSparkles } from "@/components/Icons";
@@ -23,8 +24,11 @@ export default function HomePage() {
 
 function SignedOutHero() {
   return (
-    <main className="container">
-      <div className="card empty-state" style={{ padding: "4rem 2rem", textAlign: "center", marginTop: "2rem" }}>
+    <main className="container" style={{ maxWidth: "720px" }}>
+      <div style={{ marginTop: "2rem" }}>
+        <McpConnectGuide />
+      </div>
+      <div className="card empty-state" style={{ padding: "4rem 2rem", textAlign: "center" }}>
         <div className="empty-state-icon" style={{ width: "64px", height: "64px", margin: "0 auto 1.25rem" }}>
           <IconSparkles className="w-8 h-8" />
         </div>
@@ -127,6 +131,8 @@ function Dashboard() {
             {sessions?.length ?? 0} {sessions?.length === 1 ? "language" : "languages"} enrolled
           </span>
         </div>
+
+        <McpConnectGuide />
 
         {sessionsLoading && (
           <div className="card empty-state">
