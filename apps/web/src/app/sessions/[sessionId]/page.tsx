@@ -47,8 +47,8 @@ export default function SessionDashboardPage({ params }: { params: Promise<{ ses
           <div
             className="card"
             style={{
-              background: "linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(6, 182, 212, 0.05) 100%)",
-              borderColor: "rgba(99, 102, 241, 0.2)",
+              background: "var(--pink-soft)",
+              borderColor: "var(--ink)",
               display: "flex",
               alignItems: "center",
               justifyContent: "space-between",
@@ -60,15 +60,17 @@ export default function SessionDashboardPage({ params }: { params: Promise<{ ses
             <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
               <div
                 style={{
-                  width: "48px",
-                  height: "48px",
-                  borderRadius: "12px",
-                  background: "var(--primary-glow)",
-                  border: "1px solid rgba(99, 102, 241, 0.3)",
+                  width: "52px",
+                  height: "52px",
+                  flexShrink: 0,
+                  borderRadius: 0,
+                  background: "var(--yellow)",
+                  border: "var(--bw) solid var(--ink)",
+                  boxShadow: "3px 3px 0 var(--ink)",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  color: "var(--primary-light)",
+                  color: "var(--ink)",
                 }}
               >
                 <IconBook className="w-6 h-6" />

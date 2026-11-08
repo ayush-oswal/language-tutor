@@ -2,13 +2,16 @@ import { Show, SignInButton, SignUpButton, UserButton } from "@clerk/nextjs";
 import Image from "next/image";
 import Link from "next/link";
 
+const GREETINGS = ["Hola", "Bonjour", "Ciao", "Hallo", "こんにちは", "Olá", "Привет", "你好", "Namaste", "안녕하세요", "Merhaba", "Hej"];
+
 export function Navbar() {
   return (
+    <>
     <header className="navbar">
       <div className="navbar-inner">
         <Link href="/" className="navbar-brand">
           <div className="navbar-logo-icon">
-            <Image src="/logo.png" alt="Language Tutor MCP logo" width={34} height={34} style={{ objectFit: "cover", borderRadius: "10px" }} />
+            <Image src="/logo.png" alt="Language Tutor MCP logo" width={34} height={34} style={{ objectFit: "cover", borderRadius: 0 }} />
           </div>
           <span>Language Tutor MCP</span>
         </Link>
@@ -37,5 +40,13 @@ export function Navbar() {
         </div>
       </div>
     </header>
+    <div className="marquee" aria-hidden="true">
+      <div className="marquee-track">
+        {[...GREETINGS, ...GREETINGS, ...GREETINGS, ...GREETINGS].map((g, i) => (
+          <span key={i}>{g} ✦</span>
+        ))}
+      </div>
+    </div>
+    </>
   );
 }

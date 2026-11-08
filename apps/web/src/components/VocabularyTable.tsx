@@ -108,7 +108,7 @@ export function VocabularyTable({ words, languageCode }: { words: WordWithProgre
                       style={{
                         fontSize: "0.8rem",
                         fontFamily: "var(--font-mono)",
-                        color: accuracyPct >= 75 ? "#34d399" : accuracyPct >= 50 ? "#fbbf24" : "#fda4af",
+                        color: accuracyPct >= 75 ? "var(--success-ink)" : accuracyPct >= 50 ? "var(--warning-ink)" : "var(--danger-ink)",
                       }}
                     >
                       {timesCorrect}/{timesSeen} ({accuracyPct}%)

@@ -103,9 +103,9 @@ export function FillBlankExercise({ exercise, onSubmit, languageCode }: Exercise
       {/* Sentence Prompt */}
       <div
         style={{
-          background: "rgba(255, 255, 255, 0.02)",
-          border: "1px solid var(--border-subtle)",
-          borderRadius: "var(--radius-md)",
+          background: "var(--white)",
+          border: "var(--bw) solid var(--ink)",
+          borderRadius: 0,
           padding: "1.5rem",
           marginBottom: "1.5rem",
         }}
@@ -128,7 +128,7 @@ export function FillBlankExercise({ exercise, onSubmit, languageCode }: Exercise
                     minWidth: "70px",
                     padding: "0.1rem 0.6rem",
                     margin: "0 0.35rem",
-                    borderBottom: "2px solid var(--primary-light)",
+                    border: "3px solid var(--ink)", background: "var(--yellow)",
                     color: "var(--primary-light)",
                     fontWeight: 700,
                     textAlign: "center",

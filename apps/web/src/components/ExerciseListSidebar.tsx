@@ -93,20 +93,17 @@ export function ExerciseListSidebar({
                         style={{
                           width: "24px",
                           height: "24px",
-                          borderRadius: "6px",
+                          borderRadius: 0,
+                          border: "2px solid var(--ink)",
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
                           background: isCompleted
-                            ? "var(--success-bg)"
+                            ? "var(--teal)"
                             : isInProgress
-                            ? "var(--warning-bg)"
-                            : "rgba(255,255,255,0.05)",
-                          color: isCompleted
-                            ? "#34d399"
-                            : isInProgress
-                            ? "#fbbf24"
-                            : "var(--text-muted)",
+                            ? "var(--yellow)"
+                            : "var(--white)",
+                          color: "var(--ink)",
                         }}
                       >
                         {isCompleted ? (
@@ -117,7 +114,7 @@ export function ExerciseListSidebar({
                           <IconPlay className="w-3 h-3" />
                         )}
                       </div>
-                      <span style={{ fontWeight: 500 }}>
+                      <span style={{ fontWeight: 700 }}>
                         Session #{list.length - i}
                       </span>
                     </div>

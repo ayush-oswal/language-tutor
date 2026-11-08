@@ -61,25 +61,26 @@ export default function ExercisePage({
       </nav>
 
       {result ? (
-        <div className="card" style={{ textAlign: "center", padding: "3rem 2rem" }}>
+        <div className="card" style={{ textAlign: "center", padding: "3rem 2rem", background: "var(--pink-soft)" }}>
           <div
             style={{
-              width: "64px",
-              height: "64px",
-              borderRadius: "50%",
-              background: "rgba(16, 185, 129, 0.15)",
-              border: "1px solid rgba(16, 185, 129, 0.3)",
+              width: "76px",
+              height: "76px",
+              borderRadius: 0,
+              background: "var(--teal)",
+              border: "var(--bw) solid var(--ink)",
+              boxShadow: "5px 5px 0 var(--ink)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              color: "#34d399",
-              margin: "0 auto 1rem",
+              color: "var(--ink)",
+              margin: "0 auto 1.25rem",
             }}
           >
             <IconTrophy className="w-8 h-8" />
           </div>
 
-          <h2 className="title" style={{ fontSize: "1.8rem" }}>
+          <h2 className="title" style={{ fontSize: "2.4rem", textTransform: "uppercase" }}>
             Session Complete!
           </h2>
           <p className="muted" style={{ maxWidth: "420px", margin: "0 auto 1.5rem" }}>
@@ -100,15 +101,16 @@ export default function ExercisePage({
               display: "inline-flex",
               alignItems: "center",
               gap: "1.5rem",
-              background: "rgba(255, 255, 255, 0.03)",
+              background: "var(--white)",
+              boxShadow: "4px 4px 0 var(--ink)",
               padding: "0.75rem 1.5rem",
-              borderRadius: "var(--radius-md)",
-              border: "1px solid var(--border-subtle)",
+              borderRadius: 0,
+              border: "var(--bw) solid var(--ink)",
               marginBottom: "2rem",
             }}
           >
             <div>
-              <span style={{ fontSize: "1.2rem", fontWeight: 700, color: "#34d399", fontFamily: "var(--font-mono)" }}>
+              <span style={{ fontSize: "1.2rem", fontWeight: 700, color: "var(--success-ink)", fontFamily: "var(--font-mono)" }}>
                 {result.attempt.score}
               </span>
               <span className="muted" style={{ fontSize: "0.8rem", marginLeft: "0.3rem" }}>Correct</span>

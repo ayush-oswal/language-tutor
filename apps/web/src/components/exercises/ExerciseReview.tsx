@@ -29,12 +29,12 @@ export function ExerciseReview({
             key={r.questionId}
             style={{
               padding: "0.6rem 0",
-              borderBottom: "1px solid #2a2e38",
+              borderBottom: "2px solid var(--ink)",
             }}
           >
             <p style={{ margin: 0 }}>{r.prompt}</p>
             <p className="muted" style={{ margin: "0.25rem 0 0" }}>
-              Your answer: <strong style={{ color: r.correct ? "#7fd996" : "#e0544c" }}>{r.submittedLabel}</strong>
+              Your answer: <strong style={{ color: r.correct ? "var(--success-ink)" : "var(--danger-ink)" }}>{r.submittedLabel}</strong>
               {!r.correct && (
                 <>
                   {" "}

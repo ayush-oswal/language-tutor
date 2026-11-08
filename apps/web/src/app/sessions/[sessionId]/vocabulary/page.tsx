@@ -132,7 +132,7 @@ export default function VocabularyPage({ params }: { params: Promise<{ sessionId
               justifyContent: "space-between",
               marginTop: "1.25rem",
               paddingTop: "1rem",
-              borderTop: "1px solid var(--border-subtle)",
+              borderTop: "var(--bw) solid var(--ink)",
             }}
           >
             <span className="muted" style={{ fontSize: "0.85rem" }}>

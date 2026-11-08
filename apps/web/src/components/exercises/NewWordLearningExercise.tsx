@@ -26,7 +26,7 @@ function renderSentence(sentence: string, answer: string | null) {
       {answer === null ? (
         <span style={{ display: "inline-block", minWidth: "4ch", borderBottom: "2px solid var(--text-muted)" }}>&nbsp;</span>
       ) : (
-        <span style={{ color: "#34d399", fontWeight: 800 }}>{answer}</span>
+        <span style={{ color: "var(--success-ink)", fontWeight: 800 }}>{answer}</span>
       )}
       {after}
     </>
@@ -174,9 +174,9 @@ export function NewWordLearningExercise({ exercise, onSubmit, languageCode }: Ex
 
         <div
           style={{
-            background: "linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(168, 85, 247, 0.08) 100%)",
-            border: "1px solid rgba(99, 102, 241, 0.25)",
-            borderRadius: "var(--radius-md)",
+            background: "var(--yellow)",
+            border: "var(--bw) solid var(--ink)",
+            borderRadius: 0,
             padding: "1.25rem",
             marginBottom: "1.5rem",
             textAlign: "center",
@@ -263,9 +263,9 @@ export function NewWordLearningExercise({ exercise, onSubmit, languageCode }: Ex
 
       <div
         style={{
-          background: "linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(168, 85, 247, 0.08) 100%)",
-          border: "1px solid rgba(99, 102, 241, 0.25)",
-          borderRadius: "var(--radius-md)",
+          background: "var(--yellow)",
+          border: "var(--bw) solid var(--ink)",
+          borderRadius: 0,
           padding: "1.25rem",
           margin: "0.4rem 0 1.25rem",
         }}

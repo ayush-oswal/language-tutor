@@ -28,11 +28,11 @@ function SignedOutHero() {
       <div style={{ marginTop: "2rem" }}>
         <McpConnectGuide />
       </div>
-      <div className="card empty-state" style={{ padding: "4rem 2rem", textAlign: "center" }}>
+      <div className="card empty-state hero-card" style={{ padding: "4rem 2rem", textAlign: "center" }}>
         <div className="empty-state-icon" style={{ width: "64px", height: "64px", margin: "0 auto 1.25rem" }}>
           <IconSparkles className="w-8 h-8" />
         </div>
-        <h1 className="title" style={{ fontSize: "2rem", marginBottom: "0.5rem" }}>
+        <h1 className="title hero-title">
           Your Language Hub
         </h1>
         <p className="muted" style={{ maxWidth: "480px", margin: "0 auto 1.75rem" }}>
@@ -75,10 +75,10 @@ function Dashboard() {
             AI Accelerated Learning
           </span>
         </div>
-        <h1 className="title" style={{ fontSize: "2.2rem", fontWeight: 800, letterSpacing: "-0.03em" }}>
+        <h1 className="title hero-title">
           Your Language Hub
         </h1>
-        <p className="muted" style={{ maxWidth: "600px", fontSize: "1rem" }}>
+        <p className="muted" style={{ maxWidth: "600px", fontSize: "1.05rem", fontWeight: 500 }}>
           Adaptive vocabulary acquisition, spaced drills, and interactive story practice powered by your local AI assistant.
         </p>
       </div>
@@ -90,13 +90,13 @@ function Dashboard() {
         <div
           className="card"
           style={{
-            marginBottom: "2rem",
-            background: "linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(168, 85, 247, 0.05) 100%)",
-            borderColor: "rgba(99, 102, 241, 0.25)",
+            marginBottom: "2.5rem",
+            background: "var(--yellow)",
+            borderColor: "var(--ink)",
           }}
         >
           <div className="stats-grid" style={{ margin: 0 }}>
-            <div className="stat-box" style={{ background: "rgba(10, 14, 23, 0.6)" }}>
+            <div className="stat-box">
               <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", color: "var(--primary-light)", marginBottom: "0.25rem" }}>
                 <IconBrain className="w-4 h-4" />
                 <span className="stat-box-label" style={{ margin: 0 }}>Enrolled Languages</span>
@@ -104,7 +104,7 @@ function Dashboard() {
               <span className="stat-box-value">{sessions.length}</span>
             </div>
 
-            <div className="stat-box" style={{ background: "rgba(10, 14, 23, 0.6)" }}>
+            <div className="stat-box">
               <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", color: "var(--info)", marginBottom: "0.25rem" }}>
                 <IconBook className="w-4 h-4" />
                 <span className="stat-box-label" style={{ margin: 0 }}>Words Known</span>
@@ -112,12 +112,12 @@ function Dashboard() {
               <span className="stat-box-value">{knownWords}</span>
             </div>
 
-            <div className="stat-box" style={{ background: "rgba(10, 14, 23, 0.6)" }}>
+            <div className="stat-box">
               <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", color: "var(--warning)", marginBottom: "0.25rem" }}>
                 <IconFire className="w-4 h-4" />
                 <span className="stat-box-label" style={{ margin: 0 }}>Drill Status</span>
               </div>
-              <span className="stat-box-value" style={{ fontSize: "1.1rem", color: "#34d399" }}>Ready</span>
+              <span className="stat-box-value" style={{ fontSize: "1.1rem", color: "var(--success-ink)" }}>Ready</span>
             </div>
           </div>
         </div>

@@ -24,13 +24,13 @@ export function UserIdCard() {
       className="card"
       style={{
         marginBottom: "2rem",
-        background: "linear-gradient(135deg, rgba(99, 102, 241, 0.12) 0%, rgba(168, 85, 247, 0.06) 100%)",
-        borderColor: "rgba(99, 102, 241, 0.3)",
+        background: "var(--pink-soft)",
+        borderColor: "var(--ink)",
       }}
     >
       <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.5rem" }}>
         <IconSparkles className="w-4 h-4" style={{ color: "var(--primary-light)" }} />
-        <h3 style={{ fontSize: "0.95rem", fontWeight: 700, margin: 0 }}>Your User ID</h3>
+        <h3 style={{ fontSize: "1.1rem", fontWeight: 700, margin: 0, textTransform: "uppercase" }}>Your User ID</h3>
       </div>
       <p className="muted" style={{ fontSize: "0.85rem", marginBottom: "0.85rem", maxWidth: "560px" }}>
         Enroll in a language below, then paste this into your Claude Desktop conversation so the MCP tutor
@@ -40,12 +40,13 @@ export function UserIdCard() {
         <code
           className="mono"
           style={{
-            background: "rgba(0,0,0,0.35)",
-            border: "1px solid var(--border-subtle)",
-            borderRadius: "var(--radius-md)",
+            background: "var(--ink)",
+            border: "var(--bw) solid var(--ink)",
+            borderRadius: 0,
             padding: "0.6rem 1rem",
             fontSize: "0.9rem",
-            color: "var(--primary-light)",
+            color: "var(--yellow)",
+            fontWeight: 700,
           }}
         >
           {isLoading || !me ? "Loading…" : me.id}

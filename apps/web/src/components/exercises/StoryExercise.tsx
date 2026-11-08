@@ -145,9 +145,9 @@ export function StoryExercise({ exercise, onSubmit, languageCode }: ExerciseComp
         {header("Narrative")}
         <div
           style={{
-            background: "linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(99, 102, 241, 0.05) 100%)",
-            border: "1px solid var(--border-subtle)",
-            borderRadius: "var(--radius-lg)",
+            background: "var(--white)",
+            border: "var(--bw) solid var(--ink)",
+            borderRadius: 0,
             padding: "2rem",
             marginBottom: "2rem",
           }}
@@ -245,9 +245,9 @@ export function StoryExercise({ exercise, onSubmit, languageCode }: ExerciseComp
         {node.questionType === "TRANSLATION" ? (
           <div
             style={{
-              background: "linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(6, 182, 212, 0.04) 100%)",
-              border: "1px solid rgba(99, 102, 241, 0.25)",
-              borderRadius: "var(--radius-md)",
+              background: "var(--teal-soft)",
+              border: "var(--bw) solid var(--ink)",
+              borderRadius: 0,
               padding: "1.5rem",
               marginBottom: "1.5rem",
               textAlign: "center",
@@ -264,9 +264,9 @@ export function StoryExercise({ exercise, onSubmit, languageCode }: ExerciseComp
         ) : (
           <div
             style={{
-              background: "rgba(255, 255, 255, 0.02)",
-              border: "1px solid var(--border-subtle)",
-              borderRadius: "var(--radius-md)",
+              background: "var(--white)",
+              border: "var(--bw) solid var(--ink)",
+              borderRadius: 0,
               padding: "1.5rem",
               marginBottom: "1.5rem",
             }}
@@ -289,7 +289,7 @@ export function StoryExercise({ exercise, onSubmit, languageCode }: ExerciseComp
                         minWidth: "70px",
                         padding: "0.1rem 0.6rem",
                         margin: "0 0.35rem",
-                        borderBottom: "2px solid var(--primary-light)",
+                        border: "3px solid var(--ink)", background: "var(--yellow)",
                         color: "var(--primary-light)",
                         fontWeight: 700,
                         textAlign: "center",
@@ -383,9 +383,9 @@ export function StoryExercise({ exercise, onSubmit, languageCode }: ExerciseComp
       </p>
       <div
         style={{
-          background: "linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(168, 85, 247, 0.08) 100%)",
-          border: "1px solid rgba(99, 102, 241, 0.25)",
-          borderRadius: "var(--radius-md)",
+          background: "var(--yellow)",
+          border: "var(--bw) solid var(--ink)",
+          borderRadius: 0,
           padding: "1.25rem",
           marginBottom: "1.5rem",
           textAlign: "center",

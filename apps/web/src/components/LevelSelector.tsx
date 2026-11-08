@@ -48,9 +48,10 @@ export function LevelSelector({ session, onChanged }: { session: SessionOverview
                 alignItems: "center",
                 gap: "0.85rem",
                 padding: "0.6rem 0.8rem",
-                borderRadius: "var(--radius-md)",
-                border: `1px solid ${isCurrent ? "rgba(168, 85, 247, 0.4)" : "var(--border-subtle)"}`,
-                background: isCurrent ? "rgba(168, 85, 247, 0.08)" : "transparent",
+                borderRadius: 0,
+                border: "var(--bw) solid var(--ink)",
+                boxShadow: isCurrent ? "4px 4px 0 var(--ink)" : "none",
+                background: isCurrent ? "var(--yellow)" : "var(--white)",
               }}
             >
               <span className="pill pill-level" style={{ justifyContent: "center" }}>

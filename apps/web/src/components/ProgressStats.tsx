@@ -25,7 +25,7 @@ export function ProgressStats({ session }: { session: SessionOverview }) {
         </div>
 
         <div style={{ textAlign: "right" }}>
-          <span style={{ fontSize: "1.5rem", fontWeight: 800, color: "#34d399", fontFamily: "var(--font-mono)" }}>
+          <span style={{ fontSize: "1.5rem", fontWeight: 800, color: "var(--success-ink)", fontFamily: "var(--font-mono)" }}>
             {masteredPct}%
           </span>
           <p className="muted" style={{ fontSize: "0.75rem", textTransform: "uppercase" }}>Mastered</p>
@@ -59,7 +59,7 @@ export function ProgressStats({ session }: { session: SessionOverview }) {
           {newPct > 0 && (
             <div
               className="multi-progress-segment"
-              style={{ width: `${newPct}%`, background: "rgba(255, 255, 255, 0.15)" }}
+              style={{ width: `${newPct}%`, background: "var(--white)" }}
               title={`New: ${stats.new}`}
             />
           )}
@@ -69,25 +69,25 @@ export function ProgressStats({ session }: { session: SessionOverview }) {
       {/* Stats Cards Grid */}
       <div className="stats-grid">
         <div className="stat-box">
-          <span className="stat-box-value" style={{ color: "#34d399" }}>{stats.mastered}</span>
+          <span className="stat-box-value" style={{ color: "var(--success-ink)" }}>{stats.mastered}</span>
           <span className="stat-box-label" style={{ display: "flex", alignItems: "center", gap: "0.3rem" }}>
-            <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#34d399" }} />
+            <span style={{ width: "12px", height: "12px", border: "2px solid var(--ink)", borderRadius: 0, background: "var(--success)" }} />
             Mastered
           </span>
         </div>
 
         <div className="stat-box">
-          <span className="stat-box-value" style={{ color: "#38bdf8" }}>{stats.familiar}</span>
+          <span className="stat-box-value" style={{ color: "var(--info-ink)" }}>{stats.familiar}</span>
           <span className="stat-box-label" style={{ display: "flex", alignItems: "center", gap: "0.3rem" }}>
-            <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#38bdf8" }} />
+            <span style={{ width: "12px", height: "12px", border: "2px solid var(--ink)", borderRadius: 0, background: "var(--info)" }} />
             Familiar
           </span>
         </div>
 
         <div className="stat-box">
-          <span className="stat-box-value" style={{ color: "#fbbf24" }}>{stats.learning}</span>
+          <span className="stat-box-value" style={{ color: "var(--warning-ink)" }}>{stats.learning}</span>
           <span className="stat-box-label" style={{ display: "flex", alignItems: "center", gap: "0.3rem" }}>
-            <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#fbbf24" }} />
+            <span style={{ width: "12px", height: "12px", border: "2px solid var(--ink)", borderRadius: 0, background: "var(--warning)" }} />
             Learning
           </span>
         </div>
@@ -95,7 +95,7 @@ export function ProgressStats({ session }: { session: SessionOverview }) {
         <div className="stat-box">
           <span className="stat-box-value" style={{ color: "var(--text-muted)" }}>{stats.new}</span>
           <span className="stat-box-label" style={{ display: "flex", alignItems: "center", gap: "0.3rem" }}>
-            <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: "rgba(255,255,255,0.3)" }} />
+            <span style={{ width: "12px", height: "12px", border: "2px solid var(--ink)", borderRadius: 0, background: "var(--white)" }} />
             New
           </span>
         </div>

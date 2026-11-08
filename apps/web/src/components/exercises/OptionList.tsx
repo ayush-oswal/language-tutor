@@ -59,8 +59,10 @@ export function OptionList({ options, selectedId, correctOptionId, revealed, spe
                 style={{
                   width: "28px",
                   height: "28px",
-                  borderRadius: "8px",
-                  background: "rgba(255, 255, 255, 0.08)",
+                  borderRadius: 0,
+                  background: "var(--ink)",
+                  color: "var(--yellow)",
+                  flexShrink: 0,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -125,7 +127,7 @@ export function CheckFooter({
         gap: "1rem",
       }}
     >
-      <span style={{ color: isCorrect ? "#34d399" : "#fda4af", fontWeight: 700 }}>{isCorrect ? correctText : wrongText}</span>
+      <span style={{ color: isCorrect ? "var(--success-ink)" : "var(--danger-ink)", fontWeight: 700 }}>{isCorrect ? correctText : wrongText}</span>
       <button type="button" onClick={onContinue} className="btn" style={{ padding: "0.7rem 1.5rem" }}>
         <span>{continueLabel}</span>
         <IconArrowRight className="w-4 h-4" />

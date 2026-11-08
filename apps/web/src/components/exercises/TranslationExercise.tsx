@@ -106,9 +106,9 @@ export function TranslationExercise({ exercise, onSubmit, languageCode }: Exerci
       {/* Target Phrase */}
       <div
         style={{
-          background: "linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(6, 182, 212, 0.04) 100%)",
-          border: "1px solid rgba(99, 102, 241, 0.25)",
-          borderRadius: "var(--radius-md)",
+          background: "var(--teal-soft)",
+          border: "var(--bw) solid var(--ink)",
+          borderRadius: 0,
           padding: "1.5rem",
           marginBottom: "1.5rem",
           textAlign: "center",

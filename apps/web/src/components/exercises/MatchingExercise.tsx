@@ -82,9 +82,9 @@ export function MatchingExercise({ exercise, onSubmit, languageCode }: ExerciseC
       {/* Target Word Highlight Card */}
       <div
         style={{
-          background: "linear-gradient(135deg, rgba(99, 102, 241, 0.12) 0%, rgba(168, 85, 247, 0.08) 100%)",
-          border: "1px solid rgba(99, 102, 241, 0.25)",
-          borderRadius: "var(--radius-md)",
+          background: "var(--yellow)",
+          border: "var(--bw) solid var(--ink)",
+          borderRadius: 0,
           padding: "1.25rem",
           marginBottom: "1.5rem",
           textAlign: "center",

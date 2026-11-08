@@ -23,7 +23,7 @@ export function SpeakButton({ text, lang, size = "md", style }: SpeakButtonProps
       className="btn btn-ghost"
       style={{
         padding: size === "sm" ? "0.25rem" : "0.4rem",
-        borderRadius: "999px",
+        borderRadius: 0,
         minWidth: 0,
         lineHeight: 0,
         ...style,

@@ -30,12 +30,12 @@ function CopyableCode({ code }: { code: string }) {
       <pre
         className="mono"
         style={{
-          background: "rgba(0,0,0,0.35)",
-          border: "1px solid var(--border-subtle)",
-          borderRadius: "var(--radius-md)",
+          background: "var(--ink)",
+          border: "var(--bw) solid var(--ink)",
+          borderRadius: 0,
           padding: "0.85rem 1rem",
           fontSize: "0.82rem",
-          color: "var(--primary-light)",
+          color: "var(--yellow)",
           overflowX: "auto",
           margin: 0,
         }}
@@ -61,16 +61,19 @@ function Step({ n, title, children }: { n: number; title: string; children: Reac
       <div
         style={{
           flexShrink: 0,
-          width: "26px",
-          height: "26px",
-          borderRadius: "50%",
-          background: "var(--primary-gradient)",
-          color: "white",
+          width: "32px",
+          height: "32px",
+          borderRadius: 0,
+          background: "var(--pink)",
+          border: "var(--bw) solid var(--ink)",
+          boxShadow: "3px 3px 0 var(--ink)",
+          color: "var(--ink)",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          fontSize: "0.8rem",
+          fontSize: "0.9rem",
           fontWeight: 700,
+          fontFamily: "var(--font-mono)",
         }}
       >
         {n}
@@ -91,13 +94,13 @@ export function McpConnectGuide() {
       className="card"
       style={{
         marginBottom: "2rem",
-        background: "linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(168, 85, 247, 0.05) 100%)",
-        borderColor: "rgba(99, 102, 241, 0.25)",
+        background: "var(--teal-soft)",
+        borderColor: "var(--ink)",
       }}
     >
       <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.4rem" }}>
         <IconSparkles className="w-4 h-4" style={{ color: "var(--primary-light)" }} />
-        <h3 style={{ fontSize: "1rem", fontWeight: 700, margin: 0 }}>Connect to Claude Desktop</h3>
+        <h3 style={{ fontSize: "1.15rem", fontWeight: 700, margin: 0, textTransform: "uppercase" }}>Connect to Claude Desktop</h3>
       </div>
       <p className="muted" style={{ fontSize: "0.85rem", marginBottom: "1.25rem", maxWidth: "640px" }}>
         Language Tutor runs as an MCP server inside Claude Desktop. Connect it once with the steps below.

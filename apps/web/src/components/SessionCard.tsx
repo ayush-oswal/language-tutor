@@ -3,35 +3,37 @@ import type { SessionOverview } from "@lt/core";
 import { IconArrowRight, IconBook } from "./Icons";
 import { knownPct, LEVEL_NAMES } from "@/lib/levels";
 
+// Flat brand colours per language (yellow / pink / teal family).
 const LANGUAGE_GRADIENTS: Record<string, string> = {
-  spanish: "linear-gradient(135deg, #f97316 0%, #ef4444 100%)",
-  french: "linear-gradient(135deg, #3b82f6 0%, #ef4444 100%)",
-  german: "linear-gradient(135deg, #eab308 0%, #ef4444 100%)",
-  japanese: "linear-gradient(135deg, #ec4899 0%, #ef4444 100%)",
-  italian: "linear-gradient(135deg, #10b981 0%, #ef4444 100%)",
-  russian: "linear-gradient(135deg, #3b82f6 0%, #a855f7 100%)",
-  chinese: "linear-gradient(135deg, #ef4444 0%, #f59e0b 100%)",
+  spanish: "var(--yellow)",
+  french: "var(--pink)",
+  german: "var(--teal)",
+  japanese: "var(--pink)",
+  italian: "var(--teal)",
+  russian: "var(--yellow)",
+  chinese: "var(--coral)",
 };
 
 export function languageGradient(name: string): string {
-  return LANGUAGE_GRADIENTS[name.toLowerCase()] ?? "linear-gradient(135deg, #6366f1 0%, #a855f7 100%)";
+  return LANGUAGE_GRADIENTS[name.toLowerCase()] ?? "var(--pink)";
 }
 
 export function LanguageAvatar({ name }: { name: string }) {
   return (
     <div
       style={{
-        width: "44px",
-        height: "44px",
-        borderRadius: "12px",
+        width: "52px",
+        height: "52px",
+        border: "var(--bw) solid var(--ink)",
+        borderRadius: 0,
         background: languageGradient(name),
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
         fontWeight: 800,
         fontSize: "1rem",
-        color: "white",
-        boxShadow: "0 4px 14px rgba(0,0,0,0.3)",
+        color: "var(--ink)",
+        boxShadow: "3px 3px 0 var(--ink)",
         letterSpacing: "0.05em",
         flexShrink: 0,
       }}
@@ -78,13 +80,15 @@ export function SessionCard({ session }: { session: SessionOverview }) {
         style={{
           marginTop: "1.25rem",
           paddingTop: "1rem",
-          borderTop: "1px solid var(--border-subtle)",
+          borderTop: "var(--bw) dashed var(--ink)",
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          color: "var(--primary-light)",
+          color: "var(--ink)",
           fontSize: "0.85rem",
-          fontWeight: 600,
+          fontWeight: 700,
+          textTransform: "uppercase",
+          letterSpacing: "0.05em",
         }}
       >
         <span>Open Dashboard</span>
