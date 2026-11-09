@@ -5,13 +5,31 @@ import { useApiClient } from "./useApiClient";
 
 export function useVocabulary(
   sessionId: string,
-  opts?: { search?: string; status?: WordStatus; level?: CEFRLevel; page?: number; pageSize?: number },
+  opts?: {
+    search?: string;
+    status?: WordStatus;
+    level?: CEFRLevel;
+    page?: number;
+    pageSize?: number;
+    sortBy?: "mastery";
+    sortDir?: "asc" | "desc";
+  },
 ) {
   const { isSignedIn } = useAuth();
   const client = useApiClient();
   const { data, error, isLoading } = useSWR(
     isSignedIn && sessionId
-      ? ["vocabulary", sessionId, opts?.search, opts?.status, opts?.level, opts?.page, opts?.pageSize]
+      ? [
+          "vocabulary",
+          sessionId,
+          opts?.search,
+          opts?.status,
+          opts?.level,
+          opts?.page,
+          opts?.pageSize,
+          opts?.sortBy,
+          opts?.sortDir,
+        ]
       : null,
     () => client.getVocabulary(sessionId, opts),
     { refreshInterval: 5000, keepPreviousData: true },

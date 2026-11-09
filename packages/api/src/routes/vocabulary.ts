@@ -15,6 +15,10 @@ vocabularyRouter.get(
     const level = queryEnum(req.query.level, CEFRLevel);
     const page = Math.max(1, Number(req.query.page) || 1);
     const pageSize = Math.min(100, Math.max(1, Number(req.query.pageSize) || 50));
-    res.json(await listWords(session.id, session.currentLevel, { search, status, level, page, pageSize }));
+    const sortBy = req.query.sortBy === "mastery" ? "mastery" : undefined;
+    const sortDir = req.query.sortDir === "desc" ? "desc" : undefined;
+    res.json(
+      await listWords(session.id, session.currentLevel, { search, status, level, page, pageSize, sortBy, sortDir }),
+    );
   }),
 );

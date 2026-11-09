@@ -40,6 +40,8 @@ export async function listWords(
     page?: number;
     pageSize?: number;
     sortBy?: "word" | "mastery";
+    /** Only applies to `sortBy: "mastery"`. Defaults to "asc" (weakest first). */
+    sortDir?: "asc" | "desc";
   } = {},
   tx: PrismaClientOrTx = prisma,
 ): Promise<PaginatedWords> {
@@ -69,7 +71,7 @@ export async function listWords(
     // Most words share the same mastery (e.g. every untouched word), so a fixed
     // tiebreak would always surface the same words first — shuffle within each
     // mastery tier instead, for variety across calls.
-    const all = await tx.wordProgress.findMany({ where, include, orderBy: [{ mastery: "asc" }] });
+    const all = await tx.wordProgress.findMany({ where, include, orderBy: [{ mastery: opts.sortDir ?? "asc" }] });
     const ordered = shuffleWithinMasteryTiers(all.map(toWordWithProgress));
     const page = Math.max(opts.page ?? 1, 1);
     const words = opts.pageSize ? ordered.slice((page - 1) * opts.pageSize, page * opts.pageSize) : ordered;

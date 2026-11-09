@@ -16,6 +16,7 @@ export default function VocabularyPage({ params }: { params: Promise<{ sessionId
   const { session } = useSession(sessionId);
   const [search, setSearch] = useState("");
   const [level, setLevel] = useState<CEFRLevel | "">("");
+  const [levelInitialized, setLevelInitialized] = useState(false);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState<number>(PAGE_SIZE_OPTIONS[0]);
   const { words, total } = useVocabulary(sessionId, {
@@ -23,11 +24,21 @@ export default function VocabularyPage({ params }: { params: Promise<{ sessionId
     level: level || undefined,
     page,
     pageSize,
+    sortBy: "mastery",
+    sortDir: "desc",
   });
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const selectableLevels = session
     ? CEFR_LEVELS.slice(0, CEFR_LEVELS.indexOf(session.currentLevel) + 1)
     : [];
+
+  // Default the level filter to the learner's current level, once, when the session loads.
+  useEffect(() => {
+    if (session && !levelInitialized) {
+      setLevel(session.currentLevel);
+      setLevelInitialized(true);
+    }
+  }, [session, levelInitialized]);
 
   // Reset to page 1 whenever the filters or page size change.
   useEffect(() => {

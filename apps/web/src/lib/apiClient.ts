@@ -61,7 +61,15 @@ export function createApiClient(getToken: () => Promise<string | null>) {
 
     getVocabulary: (
       sessionId: string,
-      opts?: { search?: string; status?: WordStatus; level?: CEFRLevel; page?: number; pageSize?: number },
+      opts?: {
+        search?: string;
+        status?: WordStatus;
+        level?: CEFRLevel;
+        page?: number;
+        pageSize?: number;
+        sortBy?: "mastery";
+        sortDir?: "asc" | "desc";
+      },
     ): Promise<PaginatedWords> => {
       const params = new URLSearchParams();
       if (opts?.search) params.set("search", opts.search);
@@ -69,6 +77,8 @@ export function createApiClient(getToken: () => Promise<string | null>) {
       if (opts?.level) params.set("level", opts.level);
       if (opts?.page) params.set("page", String(opts.page));
       if (opts?.pageSize) params.set("pageSize", String(opts.pageSize));
+      if (opts?.sortBy) params.set("sortBy", opts.sortBy);
+      if (opts?.sortDir) params.set("sortDir", opts.sortDir);
       const qs = params.toString();
       return call(`/api/sessions/${sessionId}/vocabulary${qs ? `?${qs}` : ""}`);
     },
