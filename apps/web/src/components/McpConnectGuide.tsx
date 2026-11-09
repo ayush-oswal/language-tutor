@@ -3,14 +3,9 @@
 import { useState } from "react";
 import { IconCheck, IconCopy, IconSparkles } from "./Icons";
 
-const CONFIG_SNIPPET = `{
-  "mcpServers": {
-    "language-tutor": {
-      "command": "npx",
-      "args": ["-y", "language-tutor-mcp"]
-    }
-  }
-}`;
+const MCP_URL = "https://language-tutor-cgwq.onrender.com/mcp";
+
+const CLI_COMMAND = `claude mcp add --transport http language-tutor ${MCP_URL}`;
 
 function CopyableCode({ code }: { code: string }) {
   const [copied, setCopied] = useState(false);
@@ -100,43 +95,40 @@ export function McpConnectGuide() {
     >
       <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.4rem" }}>
         <IconSparkles className="w-4 h-4" style={{ color: "var(--primary-light)" }} />
-        <h3 style={{ fontSize: "1.15rem", fontWeight: 700, margin: 0, textTransform: "uppercase" }}>Connect to Claude Desktop</h3>
+        <h3 style={{ fontSize: "1.15rem", fontWeight: 700, margin: 0, textTransform: "uppercase" }}>
+          Connect to Claude Desktop (or any MCP client)
+        </h3>
       </div>
       <p className="muted" style={{ fontSize: "0.85rem", marginBottom: "1.25rem", maxWidth: "640px" }}>
-        Language Tutor runs as an MCP server inside Claude Desktop. Connect it once with the steps below.
+        Language Tutor runs as an MCP server. No install needed — connect it once with the steps below.
       </p>
 
       <div style={{ display: "flex", flexDirection: "column", gap: "1.1rem" }}>
-        <Step n={1} title="Install Node.js 18 or newer">
-          Download it from{" "}
-          <a href="https://nodejs.org" target="_blank" rel="noreferrer" style={{ color: "var(--primary-light)" }}>
-            nodejs.org
-          </a>{" "}
-          if you don&apos;t already have it.
-        </Step>
-
-        <Step n={2} title="Open Claude Desktop's config file">
-          In Claude Desktop, go to <strong>Settings → Developer → Edit Config</strong>. This opens the folder
-          containing <code className="mono">claude_desktop_config.json</code> — open that file in a text editor.
-        </Step>
-
-        <Step n={3} title="Add the Language Tutor server">
-          If the file is empty, paste the block below as-is. If it already has an{" "}
-          <code className="mono">&quot;mcpServers&quot;</code> section, add just the{" "}
-          <code className="mono">&quot;language-tutor&quot;</code> entry inside it (with a comma before it).
+        <Step n={1} title="Copy the server URL">
+          Works with Claude Desktop, Claude.ai, Claude Code, or any other MCP client that supports remote
+          (Streamable HTTP) servers.
           <div style={{ marginTop: "0.6rem" }}>
-            <CopyableCode code={CONFIG_SNIPPET} />
+            <CopyableCode code={MCP_URL} />
           </div>
         </Step>
 
-        <Step n={4} title="Save the file and restart Claude Desktop">
-          Closing the window isn&apos;t enough. On Windows, right-click the Claude icon in the system tray and
-          choose <strong>Quit</strong>; on macOS, press <strong>⌘Q</strong>. Then open Claude Desktop again.
+        <Step n={2} title="Add it in your client">
+          <strong>Claude Desktop / Claude.ai:</strong> Settings → Connectors → Add custom connector, and paste the
+          URL.
+          <br />
+          <strong>Claude Code:</strong> run this in your terminal instead:
+          <div style={{ marginTop: "0.6rem" }}>
+            <CopyableCode code={CLI_COMMAND} />
+          </div>
         </Step>
 
-        <Step n={5} title="Find it in Claude's tools">
-          &quot;language-tutor&quot; should now be listed under Claude's tools (the tools / connectors menu in the
-          chat box). Sign in above, enroll in a language, and give Claude your User ID when it asks.
+        <Step n={3} title="Find it in your tools">
+          &quot;language-tutor&quot; should now be listed among your client's tools/connectors. Sign in above,
+          enroll in a language, and give it your User ID when it asks.
+          <div style={{ marginTop: "0.5rem", fontSize: "0.8rem" }}>
+            The server runs on a free hosting tier, so the very first request after a period of inactivity can
+            take 30-60 seconds while it wakes back up — after that it's fast.
+          </div>
         </Step>
       </div>
     </div>

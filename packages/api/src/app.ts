@@ -5,6 +5,7 @@ import { errorHandler } from "./middleware/errorHandler.js";
 import { exercisesRouter } from "./routes/exercises.js";
 import { languagesRouter } from "./routes/languages.js";
 import { mcpRouter } from "./routes/mcp.js";
+import { mcpServerRouter } from "./routes/mcpServer.js";
 import { sessionsRouter } from "./routes/sessions.js";
 import { usersRouter } from "./routes/users.js";
 import { vocabularyRouter } from "./routes/vocabulary.js";
@@ -22,6 +23,11 @@ export function createApp(): Express {
   // listSessions) is the trust boundary. See mcp.ts. Mounted before the
   // "/api" catch-all below so these requests never hit Clerk auth.
   app.use("/api/mcp", mcpRouter);
+
+  // The actual MCP protocol endpoint (Streamable HTTP) for remote clients —
+  // distinct from the /api/mcp REST routes above, which the stdio npm
+  // package's apiClient calls.
+  app.use("/mcp", mcpServerRouter);
 
   // Web-facing routes — Clerk session required, all data scoped to req.user.
   const webRouter = Router();

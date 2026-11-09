@@ -5,11 +5,13 @@
   "license": "MIT",
   "type": "module",
   "main": "dist/index.js",
+  "types": "types.d.ts",
   "bin": {
     "language-tutor-mcp": "dist/index.js"
   },
   "files": [
-    "dist"
+    "dist",
+    "types.d.ts"
   ],
   "scripts": {
     "dev": "tsx watch --env-file=../../.env src/index.ts",

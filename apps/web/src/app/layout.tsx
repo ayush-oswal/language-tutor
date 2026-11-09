@@ -30,6 +30,7 @@ const clerkAppearance = {
 
 export const metadata: Metadata = {
   title: "Language Tutor MCP",
+  icons: { icon: "/logo.png", shortcut: "/logo.png", apple: "/logo.png" },
   description: "Local-first AI language learning with intelligent spaced drills, stories, and vocabulary mastery.",
 };
 

@@ -6,42 +6,26 @@ It talks to a hosted Language Tutor backend over HTTP. Vocabulary comes from a c
 
 ## Setup
 
-You need [Node.js](https://nodejs.org) 18 or newer installed.
+The server is hosted, so no install is required — add it by URL:
 
-### Claude Desktop
-
-1. Open Claude Desktop and go to **Settings → Developer → Edit Config**. This opens the folder containing `claude_desktop_config.json`.
-2. Open `claude_desktop_config.json` in a text editor.
-3. If the file is empty, paste in the block below. If it already has an `"mcpServers"` section, add just the `"language-tutor"` entry inside it, with a comma between it and the entry before it.
-4. Save the file.
-5. Quit Claude Desktop completely. Closing the window isn't enough: on Windows, right-click the Claude icon in the system tray and choose **Quit**; on macOS, press ⌘Q. Then open it again.
-6. Language Tutor should now be listed under Claude's tools (the tools / connectors menu in the chat box).
-
-### Config
-
-```json
-{
-  "mcpServers": {
-    "language-tutor": {
-      "command": "npx",
-      "args": ["-y", "language-tutor-mcp"]
-    }
-  }
-}
+```
+https://language-tutor-cgwq.onrender.com/mcp
 ```
 
-By default it talks to the hosted Language Tutor API. To point it at a different deployment (e.g. self-hosted), set `API_BASE_URL`:
+Note: the API runs on a free hosting tier, so after a period of inactivity the first request can take 30-60 seconds while it spins back up — subsequent requests are fast.
 
-```json
-{
-  "mcpServers": {
-    "language-tutor": {
-      "command": "npx",
-      "args": ["-y", "language-tutor-mcp"],
-      "env": { "API_BASE_URL": "https://your-deployment.example.com" }
-    }
-  }
-}
+### Claude Desktop / Claude.ai
+
+Go to **Settings → Connectors → Add custom connector** and paste the URL above.
+
+### Claude Code
+
 ```
+claude mcp add --transport http language-tutor https://language-tutor-cgwq.onrender.com/mcp
+```
+
+### Any other MCP client
+
+Use the URL above with your client's remote/HTTP server option (sometimes called "Streamable HTTP").
 
 Sign up at the Language Tutor web app first to get your User ID — the tools will ask for it the first time they need it.
