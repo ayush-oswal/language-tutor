@@ -1,18 +1,32 @@
 "use client";
 
 import Link from "next/link";
-import { use } from "react";
+import { use, useEffect, useState } from "react";
+import type { CEFRLevel } from "@lt/core";
 import { ExerciseListSidebar } from "@/components/ExerciseListSidebar";
 import { LevelSelector } from "@/components/LevelSelector";
 import { ProgressStats } from "@/components/ProgressStats";
-import { IconArrowRight, IconBook, IconSparkles } from "@/components/Icons";
+import { IconArrowRight, IconBook, IconLightbulb, IconSparkles } from "@/components/Icons";
 import { useSession } from "@/lib/hooks/useSession";
 import { useExercises } from "@/lib/hooks/useExercises";
+import { CEFR_LEVELS } from "@/lib/levels";
 
 export default function SessionDashboardPage({ params }: { params: Promise<{ sessionId: string }> }) {
   const { sessionId } = use(params);
   const { session, isLoading: sessionLoading, mutate } = useSession(sessionId);
-  const { exercises } = useExercises(sessionId);
+  const [level, setLevel] = useState<CEFRLevel | "">("");
+  const [levelInitialized, setLevelInitialized] = useState(false);
+  const { exercises } = useExercises(sessionId, { level: level || undefined });
+
+  // Default the level filter to the learner's current level, once, when the session loads.
+  useEffect(() => {
+    if (session && !levelInitialized) {
+      setLevel(session.currentLevel);
+      setLevelInitialized(true);
+    }
+  }, [session, levelInitialized]);
+
+  const selectableLevels = session ? CEFR_LEVELS.slice(0, CEFR_LEVELS.indexOf(session.currentLevel) + 1) : [];
 
   if (sessionLoading || !session) {
     return (
@@ -36,9 +50,29 @@ export default function SessionDashboardPage({ params }: { params: Promise<{ ses
       </nav>
 
       <div className="layout">
-        <ExerciseListSidebar sessionId={sessionId} exercises={exercises ?? []} />
+        <ExerciseListSidebar
+          sessionId={sessionId}
+          exercises={exercises ?? []}
+          level={level}
+          onLevelChange={setLevel}
+          selectableLevels={selectableLevels}
+        />
 
         <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+          <div
+            className="card"
+            style={{ background: "var(--yellow-soft)", borderColor: "var(--ink)", padding: "1.1rem 1.25rem" }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.5rem" }}>
+              <IconLightbulb className="w-4 h-4" />
+              <strong style={{ textTransform: "uppercase", fontSize: "0.85rem" }}>Note</strong>
+            </div>
+            <ul style={{ margin: 0, paddingLeft: "1.25rem", fontSize: "0.88rem", lineHeight: 1.6, color: "var(--text-main)" }}>
+              <li>Prompt your MCP client to learn new words, to expand your vocabulary.</li>
+              <li>Use the exercises to revise and increase familiarity with already learned words.</li>
+            </ul>
+          </div>
+
           <ProgressStats session={session} />
 
           <LevelSelector session={session} onChanged={() => mutate()} />

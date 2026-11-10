@@ -51,13 +51,14 @@ export async function getExercise(exerciseId: string): Promise<ExerciseWithAttem
 
 export async function listExercises(
   languageSessionId: string,
-  opts: { type?: ExerciseType; status?: ExerciseStatus } = {},
+  opts: { type?: ExerciseType; status?: ExerciseStatus; level?: CEFRLevel } = {},
 ): Promise<ExerciseSummary[]> {
   return prisma.exercise.findMany({
     where: {
       languageSessionId,
       ...(opts.type ? { type: opts.type } : {}),
       ...(opts.status ? { status: opts.status } : {}),
+      ...(opts.level ? { level: opts.level } : {}),
     },
     orderBy: { createdAt: "desc" },
     select: { id: true, languageSessionId: true, type: true, level: true, status: true, createdAt: true, completedAt: true },

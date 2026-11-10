@@ -27,5 +27,8 @@
   { "name": "technology", "description": "Computers, phones, the internet, media" },
   { "name": "communication", "description": "Speaking, writing, asking, telling, language itself" },
   { "name": "daily-life", "description": "Daily routines and common everyday actions" },
-  { "name": "society", "description": "Government, law, politics, news, religion, social issues" }
+  { "name": "society", "description": "Government, law, politics, news, religion, social issues" },
+  { "name": "history", "description": "Historical events, eras, periods and figures" },
+  { "name": "science", "description": "Science, nature phenomena, scientific concepts and discovery" },
+  { "name": "finance", "description": "Money, banking, investing, the economy, financial matters" }
 ]

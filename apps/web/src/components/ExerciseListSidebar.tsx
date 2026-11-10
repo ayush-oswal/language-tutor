@@ -1,5 +1,5 @@
 import Link from "next/link";
-import type { ExerciseStatus, ExerciseSummary, ExerciseType } from "@lt/core";
+import type { CEFRLevel, ExerciseStatus, ExerciseSummary, ExerciseType } from "@lt/core";
 import { IconBook, IconBrain, IconCheck, IconClock, IconLayers, IconPlay, IconSparkles } from "./Icons";
 
 const GROUP_LABELS: Record<ExerciseType, string> = {
@@ -29,9 +29,15 @@ const STATUS_LABEL: Record<ExerciseStatus, string> = {
 export function ExerciseListSidebar({
   sessionId,
   exercises,
+  level,
+  onLevelChange,
+  selectableLevels,
 }: {
   sessionId: string;
   exercises: ExerciseSummary[];
+  level: CEFRLevel | "";
+  onLevelChange: (level: CEFRLevel | "") => void;
+  selectableLevels: CEFRLevel[];
 }) {
   const byType = new Map<ExerciseType, ExerciseSummary[]>();
   for (const type of GROUP_ORDER) byType.set(type, []);
@@ -44,7 +50,7 @@ export function ExerciseListSidebar({
 
   return (
     <aside className="card" style={{ padding: "1.25rem" }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1rem" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.85rem" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
           <IconLayers className="w-4 h-4" />
           <h3 style={{ fontSize: "1rem", fontWeight: 700, margin: 0 }}>
@@ -58,10 +64,26 @@ export function ExerciseListSidebar({
         )}
       </div>
 
+      <select
+        value={level}
+        onChange={(e) => onLevelChange(e.target.value as CEFRLevel | "")}
+        aria-label="Filter by level"
+        style={{ width: "100%", marginBottom: "1rem", fontSize: "0.85rem", padding: "0.5rem 0.75rem" }}
+      >
+        <option value="">All levels</option>
+        {selectableLevels.map((l) => (
+          <option key={l} value={l}>
+            {l}
+          </option>
+        ))}
+      </select>
+
       {!hasAny && (
         <div className="empty-state" style={{ padding: "1.5rem 0.5rem", textAlign: "left" }}>
           <p className="muted" style={{ fontSize: "0.85rem", lineHeight: 1.5 }}>
-            No exercises generated yet. Ask your assistant to generate exercises or teach new words!
+            {level
+              ? `No ${level} exercises yet. Ask your assistant to generate exercises or teach new words!`
+              : "No exercises generated yet. Ask your assistant to generate exercises or teach new words!"}
           </p>
         </div>
       )}

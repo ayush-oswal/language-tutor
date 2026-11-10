@@ -1,13 +1,14 @@
 import { useAuth } from "@clerk/nextjs";
 import useSWR from "swr";
+import type { CEFRLevel } from "@lt/core";
 import { useApiClient } from "./useApiClient";
 
-export function useExercises(sessionId: string) {
+export function useExercises(sessionId: string, opts?: { level?: CEFRLevel }) {
   const { isSignedIn } = useAuth();
   const client = useApiClient();
   const { data, error, isLoading } = useSWR(
-    isSignedIn && sessionId ? ["exercises", sessionId] : null,
-    () => client.getExercises(sessionId),
+    isSignedIn && sessionId ? ["exercises", sessionId, opts?.level] : null,
+    () => client.getExercises(sessionId, opts),
     { refreshInterval: 5000 },
   );
   return { exercises: data, error, isLoading };

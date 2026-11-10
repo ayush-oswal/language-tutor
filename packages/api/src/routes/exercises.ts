@@ -1,5 +1,5 @@
 import { completeExercise, getExercise, getSession, listExercises } from "@lt/core";
-import { ExerciseStatus, ExerciseType } from "@lt/db";
+import { CEFRLevel, ExerciseStatus, ExerciseType } from "@lt/db";
 import { Router } from "express";
 import { completeExerciseBodySchema } from "../dto/exercises.dto.js";
 import { asyncHandler } from "../middleware/errorHandler.js";
@@ -13,7 +13,8 @@ exercisesRouter.get(
     const session = await getSession(req.params.sessionId, { userId: req.user!.id });
     const type = queryEnum(req.query.type, ExerciseType);
     const status = queryEnum(req.query.status, ExerciseStatus);
-    res.json(await listExercises(session.id, { type, status }));
+    const level = queryEnum(req.query.level, CEFRLevel);
+    res.json(await listExercises(session.id, { type, status, level }));
   }),
 );
 

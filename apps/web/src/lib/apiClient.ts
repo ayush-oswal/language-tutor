@@ -85,11 +85,12 @@ export function createApiClient(getToken: () => Promise<string | null>) {
 
     getExercises: (
       sessionId: string,
-      opts?: { type?: ExerciseType; status?: ExerciseStatus },
+      opts?: { type?: ExerciseType; status?: ExerciseStatus; level?: CEFRLevel },
     ): Promise<ExerciseSummary[]> => {
       const params = new URLSearchParams();
       if (opts?.type) params.set("type", opts.type);
       if (opts?.status) params.set("status", opts.status);
+      if (opts?.level) params.set("level", opts.level);
       const qs = params.toString();
       return call(`/api/sessions/${sessionId}/exercises${qs ? `?${qs}` : ""}`);
     },
