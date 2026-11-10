@@ -13,7 +13,7 @@ import { CEFR_LEVELS } from "@/lib/levels";
 
 export default function SessionDashboardPage({ params }: { params: Promise<{ sessionId: string }> }) {
   const { sessionId } = use(params);
-  const { session, isLoading: sessionLoading, mutate } = useSession(sessionId);
+  const { session, isLoading: sessionLoading, mutate } = useSession(sessionId, { poll: true });
   const [level, setLevel] = useState<CEFRLevel | "">("");
   const [levelInitialized, setLevelInitialized] = useState(false);
   const { exercises } = useExercises(sessionId, { level: level || undefined });

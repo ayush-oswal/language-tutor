@@ -6,6 +6,8 @@ import { useApiClient } from "./useApiClient";
 export function useLanguages() {
   const { isSignedIn } = useAuth();
   const client = useApiClient();
-  const { data, error, isLoading } = useSWR(isSignedIn ? "languages" : null, () => client.getLanguages());
+  const { data, error, isLoading } = useSWR(isSignedIn ? "languages" : null, () => client.getLanguages(), {
+    revalidateOnFocus: false,
+  });
   return { languages: data, error, isLoading };
 }

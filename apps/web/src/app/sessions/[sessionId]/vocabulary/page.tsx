@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { use, useEffect, useState } from "react";
+import { use, useEffect, useRef, useState } from "react";
 import type { CEFRLevel } from "@lt/core";
 import { VocabularyTable } from "@/components/VocabularyTable";
 import { IconArrowLeft, IconArrowRight, IconSearch } from "@/components/Icons";
@@ -19,13 +19,18 @@ export default function VocabularyPage({ params }: { params: Promise<{ sessionId
   const [levelInitialized, setLevelInitialized] = useState(false);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState<number>(PAGE_SIZE_OPTIONS[0]);
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const listRef = useRef<HTMLDivElement>(null);
+
+  // Wait for the level default before the first fetch, and debounce typing, to avoid wasted requests.
   const { words, total } = useVocabulary(sessionId, {
-    search: search || undefined,
+    search: debouncedSearch || undefined,
     level: level || undefined,
     page,
     pageSize,
     sortBy: "mastery",
     sortDir: "desc",
+    enabled: levelInitialized,
   });
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const selectableLevels = session
@@ -40,10 +45,20 @@ export default function VocabularyPage({ params }: { params: Promise<{ sessionId
     }
   }, [session, levelInitialized]);
 
-  // Reset to page 1 whenever the filters or page size change.
+  // Debounce the search box; reset to page 1 whenever the filters or page size change.
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search), 300);
+    return () => clearTimeout(t);
+  }, [search]);
+
   useEffect(() => {
     setPage(1);
-  }, [search, level, pageSize]);
+  }, [debouncedSearch, level, pageSize]);
+
+  // Back to the top of the list when the page changes.
+  useEffect(() => {
+    listRef.current?.scrollTo({ top: 0 });
+  }, [page, debouncedSearch, level, pageSize]);
 
   return (
     <main className="container">
@@ -133,7 +148,7 @@ export default function VocabularyPage({ params }: { params: Promise<{ sessionId
           </div>
         </div>
 
-        <VocabularyTable words={words ?? []} languageCode={session?.language.code} />
+        <VocabularyTable words={words ?? []} languageCode={session?.language.code} scrollRef={listRef} />
 
         {totalPages > 1 && (
           <div

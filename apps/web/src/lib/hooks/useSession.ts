@@ -11,13 +11,14 @@ export function useSessions() {
   return { sessions: data, error, isLoading, mutate };
 }
 
-export function useSession(sessionId: string) {
+/** Pass `{ poll: true }` only where live progress matters (the session dashboard). */
+export function useSession(sessionId: string, opts?: { poll?: boolean }) {
   const { isSignedIn } = useAuth();
   const client = useApiClient();
   const { data, error, isLoading, mutate } = useSWR(
     isSignedIn && sessionId ? ["session", sessionId] : null,
     () => client.getSession(sessionId),
-    { refreshInterval: 5000 },
+    { refreshInterval: opts?.poll ? 5000 : 0 },
   );
   return { session: data, error, isLoading, mutate };
 }

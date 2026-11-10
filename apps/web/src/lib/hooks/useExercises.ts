@@ -20,7 +20,6 @@ export function useExercise(exerciseId: string) {
   const { data, error, isLoading, mutate } = useSWR(
     isSignedIn && exerciseId ? ["exercise", exerciseId] : null,
     () => client.getExercise(exerciseId),
-    { refreshInterval: 0 },
   );
   return { exercise: data, error, isLoading, mutate };
 }

@@ -5,6 +5,8 @@ import { useApiClient } from "./useApiClient";
 export function useMe() {
   const { isSignedIn } = useAuth();
   const client = useApiClient();
-  const { data, error, isLoading } = useSWR(isSignedIn ? "me" : null, () => client.getMe());
+  const { data, error, isLoading } = useSWR(isSignedIn ? "me" : null, () => client.getMe(), {
+    revalidateOnFocus: false,
+  });
   return { me: data, error, isLoading };
 }

@@ -13,12 +13,14 @@ export function useVocabulary(
     pageSize?: number;
     sortBy?: "mastery";
     sortDir?: "asc" | "desc";
+    /** Set false to hold off fetching (e.g. until filter defaults are known). */
+    enabled?: boolean;
   },
 ) {
   const { isSignedIn } = useAuth();
   const client = useApiClient();
   const { data, error, isLoading } = useSWR(
-    isSignedIn && sessionId
+    isSignedIn && sessionId && opts?.enabled !== false
       ? [
           "vocabulary",
           sessionId,
@@ -32,7 +34,7 @@ export function useVocabulary(
         ]
       : null,
     () => client.getVocabulary(sessionId, opts),
-    { refreshInterval: 5000, keepPreviousData: true },
+    { keepPreviousData: true },
   );
   return {
     words: data?.words,

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type RefObject } from "react";
 import type { WordSentence, WordWithProgress } from "@lt/core";
 import { IconBook, IconX } from "./Icons";
 import { SpeakButton } from "./SpeakButton";
@@ -259,12 +259,22 @@ function WordRow({
   );
 }
 
-export function VocabularyTable({ words, languageCode }: { words: WordWithProgress[]; languageCode?: string }) {
+const LIST_HEIGHT = "min(65vh, 640px)";
+
+export function VocabularyTable({
+  words,
+  languageCode,
+  scrollRef,
+}: {
+  words: WordWithProgress[];
+  languageCode?: string;
+  scrollRef?: RefObject<HTMLDivElement | null>;
+}) {
   const [selected, setSelected] = useState<WordWithProgress | null>(null);
 
   if (!Array.isArray(words) || words.length === 0) {
     return (
-      <div className="empty-state" style={{ padding: "2.5rem 1rem" }}>
+      <div className="empty-state" style={{ padding: "2.5rem 1rem", minHeight: LIST_HEIGHT }}>
         <div className="empty-state-icon">
           <IconBook className="w-6 h-6" />
         </div>
@@ -278,7 +288,16 @@ export function VocabularyTable({ words, languageCode }: { words: WordWithProgre
 
   return (
     <>
-      <div style={{ border: "var(--bw) solid var(--ink)", boxShadow: "var(--shadow-sm)", background: "var(--white)" }}>
+      <div
+        ref={scrollRef}
+        style={{
+          border: "var(--bw) solid var(--ink)",
+          boxShadow: "var(--shadow-sm)",
+          background: "var(--white)",
+          height: LIST_HEIGHT,
+          overflowY: "auto",
+        }}
+      >
         {words.map((word) => (
           <WordRow key={word.id} word={word} languageCode={languageCode} onSelect={() => setSelected(word)} />
         ))}
